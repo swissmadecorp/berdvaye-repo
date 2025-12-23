@@ -1,0 +1,55 @@
+@extends ("layouts.default1")  
+
+@section ('header') 
+<link href="{{ asset('/lightgallery/css/lightgallery.css') }}" rel="stylesheet">    
+<link href="{{ asset('/lightgallery/css/justifiedGallery.min.css') }}" rel="stylesheet">
+@endsection
+
+@section ('content')
+
+<div class="m_top_75"></div>
+<h4 class="text-center">The Process of Making our Sculptures from Vintage Parts.</h4>
+<div class="sub-text-line m_bottom_25"><img src="/images/title.png"></div>
+<section class="section-small-header m_bottom_25">
+    <div class="container-fluid">
+        <div id="animated-thumbnails" class="list-unstyled justified-gallery">
+            @foreach ($images as $image)
+            <a href="/images/collections/{{ $image->location }}" class="light-link" >
+                <img alt="{{ $image->title }}" class="img-responsive" src="/images/collections/thumbs/{{ $image->location }}">
+            </a>
+        @endforeach
+        </div>
+    </div>
+</section>
+
+@endsection
+
+@section ('footer')
+<script src="{{ asset('/lightgallery/js/lightgallery.min.js') }}"></script>
+<script src="{{ asset('/lightgallery/js/lg-thumbnail.min.js') }}"></script>
+<script src="{{ asset('/lightgallery/js/jquery.mousewheel.min.js') }}"></script>
+<script src="{{ asset('/lightgallery/js/jquery.justifiedGallery.min.js') }}"></script>
+
+@endsection
+
+@section ('jquery')
+<script>
+    $(document).ready( function() {
+        var $animThumb = $('#animated-thumbnails');
+        if ($animThumb.length) {
+            $animThumb.justifiedGallery({
+                border: 6,
+                margins : 10,
+                captions: true,
+            }).on('jg.complete', function() {
+                $animThumb.lightGallery({
+                    thumbnail: true,
+                    selector: '.light-link'
+                });
+            });
+        };
+
+    });
+</script>
+
+@endsection        

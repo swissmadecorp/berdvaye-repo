@@ -1,0 +1,1316 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Mail\GmailCustomer; 
+use Dacastro4\LaravelGmail\Services\Message\Mail;
+// use Illuminate\Support\Facades\Mail;
+use App\Models\Mail\EmailCustomer; 
+use Elibyy\TCPDF\Facades\TCPDF;
+use PDF;
+use Imagick;
+use App\Models\Credit;
+use Carbon\Carbon;
+use App\Models\Order;
+use App\Models\Returns;
+use App\Models\Estimate;
+use App\Models\Customer;
+use App\Models\Product;
+use App\Models\Taxable;
+use App\Models\Payment;
+use App\Models\OrderProduct;
+use App\Models\CustomerCredit;
+use Session;
+use Input;
+
+class SculptureOrdersController extends Controller
+{
+    protected $displayPDF = true;
+
+    public function ajaxSetItemAsRepair(Request $request) {
+        $id = $request['id'];
+        
+        OrderProduct::find($id)->update([
+            'repair_date' => Carbon::now()
+        ]);
+
+        return date('m/d/Y',strtotime(now()));
+    }
+
+    public function ajaxRecieveItemBackFromRepair(Request $request) {
+        $id = $request['id'];
+        
+        OrderProduct::find($id)->update([
+            'repair_date' => null,
+            'returned_date' => Carbon::now()
+        ]);
+
+        return date('m/d/Y',strtotime(now())).'<br>Returned';
+    }
+
+    public function ajaxSetItemShipped(Request $request) {
+        if ($request->ajax()) {
+            $id = $request['id'];
+            $tracking = $request['tracking'];
+            $trackingText = "";
+
+            OrderProduct::find($id)->update([
+                'shipped' => Carbon::now(),
+                'tracking' => $tracking
+            ]);
+
+            if ($tracking) $trackingText = "<br><a target='_blank' class='btn btn-success btn-sm' href='https://www.fedex.com/apps/fedextrack/?tracknumbers=$tracking'>$tracking</a>";
+            return date('m/d/Y',strtotime(now())).$trackingText;
+        }
+    }
+
+        /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        
+        $order = Order::with('orderReturns')->where('id',$id)->first();
+        // if (\Auth::user()->name == 'Edward B') {
+        //     $products = \DB::table('order_product')->select(\DB::raw("product_id,memo_id,product_name,image_location,serial,p_retail,order_id, price, model, qty, previous_id FROM (SELECT 
+        //     order_product.product_id,memo_id,product_name,image_location,serial,p_retail,order_product.order_id,price, model, order_product.qty, previous_id, ROW_NUMBER() OVER ( PARTITION BY `model` ORDER BY `qty` DESC) rn
+        //     ,(SELECT COUNT(*) FROM order_product WHERE `order_id` = ".$id." and `model` = `model` AND `qty` <> -1) mx
+        //     ,(SELECT COUNT(*) FROM order_product WHERE `order_id` = ".$id." and `model` = `model` AND `qty` = -1) nx"))
+        //     ->join('product_retails','p_model','=','model')
+        //     ->leftJoin('order_returns','order_returns.order_id','=','order_product.order_id')
+        //     ->whereRaw('order_product.order_id = '.$id.' OR previous_id = '.$id.') t1 WHERE rn <= IF(mx = 0 , nx,mx+ IF(nx=0, 0,nx -mx))')->get();
+        //     // echo($products);die;
+        //     //dd($products);
+        // } else
+        
+        // $products = OrderProduct::join('product_retails','model','p_model')->where('order_id',$id)->orWhere('previous_id',$id)->get();
+              
+        if (!$order)
+            return response()->view('errors/admin-notfound',['id'=>$id],404);
+
+        if ($order->status == 0) 
+            $status = "UnPaid";
+        elseif ($order->status == 1)
+            $status = "Paid";
+        elseif ($order->status == 2)
+            $status = "Transferred";
+        else $status = "Returned";
+
+        return view("admin.sculptureorders.show",['pagename' => 'Invoice #'.$id . ' - ' .  $status, 'order' => $order]);
+    }
+
+    public function ajaxSaveCustomer(Request $request) {
+        if ($request->ajax()) {
+            parse_str($request['_form'],$output);
+            //return response()->json($output);
+            $customer = Customer::create([
+                'cgroup' => '1',
+                'firstname' => $output['b-firstname'],
+                'lastname' => $output['b-lastname'],
+                'company' => $output['b-company'],
+                'address1' => $output['b-address1'],
+                'address2' => $output['b-address2'],
+                'phone' => $output['b-phone'],
+                'country' => $output['b-country'],
+                'state' => $output['b-state'],
+                'city' => $output['b-city'],
+                'zip' => $output['b-zip'],
+            ]);
+
+            return response()->json($customer->id);
+        }
+    }
+
+    public function ajaxOrderStatus(Request $request) {
+        //1523
+        
+        $action = $request["action"];
+        
+        if ($action == 'unpaid' || !$action)
+            $orders = Order::where('status','=',0)->get();
+        elseif ($action == 'paid')
+            $orders = Order::where('status','=',1)->get();
+        elseif ($action == 'returns')
+            $orders = Order::where('status','=',2)->get();
+        elseif ($action == 'repairs')
+        $orders = Order::with('products')->whereHas('products', function($query) {
+            $query->whereNotNull('repair_date');
+        })->get();
+        elseif ($action == 'backorders')
+            $orders = Order::with('products')->whereHas('products', function($query) {
+                $query->where('serial','Backorder');
+            })->orderBy('created_at', 'asc')->get();
+
+        else $orders = Order::all();
+        $data = [];
+        foreach ($orders as $order) {
+            $status = orderStatus()->get($order->status);
+            $method = $order->method;
+            if ($order->emailed) 
+                $method .=' <i class="fa fa-envelope" title="Invoice was emailed"></i>';
+
+            if ($order->tracking)
+                $shipped = " <i class='fab fa-fedex fa-lg'></i>";
+            else $shipped='';
+            
+            $link = "<a href='orders/$order->id'>".$order->id."</a>";
+            $companyInfo = !$order->b_firstname && !$order->b_lastname && $order->s_firstname && $order->s_lastname ? '<b>'.$order->b_company . '</b>-'.$order->s_firstname . ' ' .$order->s_lastname .'*': $order->b_company.'<br>'.$order->s_firstname . ' ' .$order->s_lastname;
+            $subtotal = $order->total;
+            $custNo = $order->customers->first()->id;
+            
+            foreach ($order->orderReturns as $returns) 
+                $subtotal -= ($returns->pivot->amount*$returns->pivot->qty);
+
+            // foreach ($order->payments as $payment) 
+            //     $subtotal -= $payment->amount;
+            $subtotal -= $order->payments->sum('amount');
+
+            $data[] = array('',
+                    $link,$custNo,
+                    $method.$shipped,
+                    $order->po,
+                    $companyInfo,
+                    $status,
+                    $order->created_at->format('m-d-y'),
+                    '$'. number_format($subtotal,2)
+            );
+        }
+
+        return response()->json(array('data'=>$data,'action'=>$action));
+    }
+    
+    public function ajaxGetBackorders() {
+        $orders = Order::with('products')->whereHas('products', function($query) {
+            $query->where('serial','Backorder');
+        })->get();
+
+        return $orders->count();
+    }
+
+    public function ajaxGetRepairs() {
+        $orders = Order::with('products')->whereHas('products', function($query) {
+            $query->whereNotNull('repair_date');
+        })->get();
+        
+        return $orders->count();
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $orders = Order::latest()->get();
+        return view('admin.sculptureorders',['pagename' => 'Invoices / Backorders','orders' => $orders]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        
+        return view('admin.orders.create',['pagename' => 'New Invoice']);
+    }
+
+    public function markAsRead() {
+        auth()->user()->unreadNotifications->markAsRead();
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {       
+        $this->storeOrder($request->all());
+        return redirect("admin/orders");
+    }
+
+    public function createFromEstimate($id)
+    {
+        $estimate = Estimate::find($id);
+        return view('admin.orders.createfromestimate',['pagename' => "Invoice for order # $id",'estimate'=>$estimate]);
+    }
+
+    public function storeInvoiceFromOrder(Request $request)
+    {
+    
+       $validator = \Validator::make($request->all(), [
+            'b_company' => "required",
+        ]);
+        
+        if ($validator->fails()) {
+            return back()
+                ->withInputs($request->all())
+                ->withErrors($validator);
+        }
+
+        $keys = ($request['index']);
+        $id= $request['order_id'];
+        //dd($request->all());
+        foreach ($keys as $index=>$key) {
+           //$product_id = $request['index'][$index];
+           $qty = $request['qty'][$index];
+           $price = $request['price'][$index];
+           $serial = $request['serial'][$index];
+           $model = $request['model'][$index];
+           
+           if ($serial && $serial != 'Backorder') {
+               $product = Product::where('p_serial',$serial)
+                   ->where('p_model',$model)
+                   ->first();
+               
+               if (!$product) {
+                   return redirect("admin/orders/$id/create")
+                       ->withInput($request->all())
+                       ->withErrors(array('message' => "Serial number $serial  with model number $model does not match the inventory."));
+               } elseif ($product->p_qty < 1) {
+                   return redirect("admin/orders/$id/create")
+                       ->withInput($request->all())
+                       ->withErrors(array('message' => "Item with the serial number $serial with model number $model is out of stock."));
+               }
+           }
+       }
+       
+        $estimatearray = $request->all();
+
+        $status = 1; // 1 = paid 2 = unpaid
+        if ($request['payment_options'] != 'None') {
+            $status = 0;
+        } elseif ($request['payment'] == 'On Memo' || $request['payment'] == 'Repair'){
+            $status = 0;
+        }
+
+        $created_at = $request['created_at'];
+        $estimatearray['status'] = 0;
+
+        if ($created_at) {
+            $estimatearray['created_at']=date('Y-m-d H:i:s', strtotime($created_at));
+            $estimatearray['updated_at']=date('Y-m-d H:i:s', strtotime($created_at));
+        }
+        
+       // $order = Order::create($estimatearray);
+        
+        $customer = Customer::find($request['customer_id']);
+        //$order->customers()->attach($customer->id);
+        $subtotal = 0;
+        $total = 0;
+        $tax = 0;
+        
+        // if ($request['payment'] == 'On Memo' || $order->method=='Repair'){
+        //     $status = 1;
+        // } elseif ($request['payment'] == 'Invoice'){
+        //     $status = 3;
+        // }
+
+        foreach ($keys as $index => $key) {
+        //    $product_id = $request['index'][$index];
+           $qty = $request['qty'][$index];
+           $price = $request['price'][$index];
+           $serial = $request['serial'][$index];
+           $model = $request['model'][$index];
+           $product_name = $request['product_name'][$index];
+           //echo $qty, " ", $price, " ", $serial, " ", $model, " ", $product_name;
+           //die;
+           if ($serial && $serial != 'Backorder') {
+               $product = Product::where('p_serial',$serial)
+                   ->where('p_model',$model)
+                   ->first();
+           } else {
+               $product = Product::where('p_model',$model)
+                   ->first();
+               $serial ='Backorder';
+           }
+
+           $order->products()->attach($product_id, [
+               'price' => $price,
+               'qty' => $qty,
+               'retail' => $product->retailvalue(),
+               'serial' => $serial,
+               'product_name' => $product_name,
+               'model' => $model
+           ]);
+
+           $tqty = $product->p_qty;
+           if ($serial) {
+                if ($request['method'] == 'Invoice'){
+                    $tqty = $product->p_qty - $qty;
+           
+                    $product->update([
+                        'p_qty' => $tqty,
+                        'p_status' => $status
+                    ]);
+                }
+           }
+
+           if ($price > 0) 
+                $subtotal += ($price*$qty);
+        }
+        
+        $freight = $request['freight'];
+        if ($customer->cgroup == 0 && $subtotal) {
+            $tax = Taxable::where('state_id',$order->s_state)->value('tax');
+            $total = $subtotal + ($subtotal * ($tax/100))+$freight;
+        } else {
+            $total = $subtotal+$freight;
+        }
+
+        $order->update([
+            'subtotal' => $subtotal,
+            'total' => $total,
+            'previous_id' => $id,
+            'taxable' => $tax,
+            'freight' => $freight
+        ]);
+
+        return redirect("admin/orders/".$order->id);
+    }
+
+    public function createFromBackorder(Request $request) {
+        $ajax_order = $request['order'];
+        
+        $product_id = $ajax_order['product_id'];
+        $order_id = $ajax_order['order_id'];
+        $serial = $ajax_order['serial'];
+        $price = abs($ajax_order['price']);
+        $model = $ajax_order['model'];
+        $product_name = $ajax_order['product_name'];
+
+        $order = Order::with('products')->whereHas('products',function($query){
+            $query->where('serial','Backorder');
+        })
+        ->where('id',$order_id)
+        ->first();
+                
+        foreach ($order->products as $product) {
+            if ($product->pivot->serial == 'Backorder') {
+                $find_order = Order::find($order_id)->toArray();
+                $find_order['tracking'] = '';
+                $new_order = Order::create($find_order);
+                $new_order->customers()->attach($order->customers->first()->id);
+                
+                $new_order->products()->attach($product_id, [
+                    'qty' => 1,
+                    'price' => $price,
+                    'serial' => $serial,
+                    'model' => $model,
+                    'product_name' => $product_name,
+                    'previous_order_id' => $order_id,
+                ]);
+                
+                Product::find($product_id)->decrement('p_qty');
+
+                // $order_product = \App\OrderProduct::where('id',$product->pivot->id)->first();
+                
+                // $order_product->timestamps = false;
+                // $order_product->product_id = $product_id;
+                // $order_product->price = abs($order_product->price);
+                // $order_product->serial = $serial;
+                // $order_product->qty = 1;
+                // $order_product->new_order_id = $new_order_id;
+                // $order_product->update();
+                
+                return 'Item created for order # '.$order_id;
+            }
+        }
+
+    }
+
+    private function storeOrder($request,$customer_id=0) {
+        //dd($request);
+
+        $created_at = $request['created_at'];
+        if ($request['b_country']!='231') 
+        $request['b_state'] = '';
+
+        if ($request['s_country']!='231') 
+            $request['s_state'] = '';
+
+        if ($created_at) {
+            $orderarray['created_at']=date('Y-m-d H:i:s', strtotime($created_at));
+            $orderarray['updated_at']=date('Y-m-d H:i:s', strtotime($created_at));
+        }
+
+        $orderarray = $request;
+        $order = Order::create($orderarray);
+        $customer = Customer::find($request['customer_id']);
+        
+        if (!$customer) {
+            $data = array(
+                'firstname' => $request['b_firstname'],
+                'lastname' => $request['b_lastname'],
+                'company' => $request['b_company'],
+                'address1' => $request['b_address1'],
+                'address2' => $request['b_address2'],
+                'phone' => $request['b_phone'],
+                'country' => $request['b_country'],
+                'state' => $request['b_state'],
+                'city' => $request['b_city'],
+                'zip' => $request['b_zip']
+            );
+
+            $customer=Customer::create($data);
+        } elseif (!$customer->address1 && isset($request['b_address1'])) {
+            $data = array(
+                'firstname' => $request['b_firstname'],
+                'lastname' => $request['b_lastname'],
+                'address1' => $request['b_address1'],
+                'address2' => $request['b_address2'],
+                'phone' => $request['b_phone'],
+                'country' => $request['b_country'],
+                'state' => $request['b_state'],
+                'city' => $request['b_city'],
+                'zip' => $request['b_zip']
+            );
+            
+            $customer->update($data);
+        }
+
+        $order->customers()->attach($customer->id);
+        $subtotal = 0;
+        $total = 0;
+        $tax = 0;
+
+        $keys = $request['product_id'];
+        $status = 3;
+        // Berd Vaye
+        if ($request['method'] == 'On Memo' || $request['method'] == 'Repair'){
+            $status = 1;
+        } 
+        
+        foreach ($keys as $index => $key) {
+            $product_id = $key;
+            $qty = $request['qty'][$index];
+            if ($qty) {
+                $price = $request['price'][$index];
+                $serial = $request['serial'][$index];
+                $product_name = $request['product_name'][$index];
+                $retail = $request['retail'][$index];
+
+                $product = Product::where('id',$product_id)->first();
+                $tqty = $product->p_qty;
+
+                if ($product->p_qty==0) {
+                    $price = 0;
+                    $serial = null;
+                    $qty = 0;
+                } else {
+                    if ($status==3)
+                        $tqty = $product->p_qty - $qty;
+
+                    if ($product->p_serial != "NONE") {
+                        $product->update([  
+                            'p_qty' => $tqty,
+                            'p_status' => $status
+                        ]);
+                    }
+
+                    $subtotal = $subtotal + ($price*$qty);
+                }
+
+                $order->products()->attach($product->id, [
+                    'qty' => $qty,
+                    'price' => $price,
+                    'serial' => $serial,
+                    'product_name' => $product_name,
+                    'retail' => $retail
+                ]);
+            }
+        }
+        
+        $discount = $request['discount'];
+        $freight = $request['freight'];
+
+        if ($customer->cgroup == 0 && $order->method!='On Memo') {
+            $tax = Taxable::where('state_id',$request['s_state'])->value('tax');
+            $total = $subtotal + ($subtotal * ($tax/100))+$freight;
+        } else 
+            $total = $subtotal+$freight;
+
+        $order->update([
+            'subtotal' => $subtotal,
+            'total' => $total-$discount,
+            'taxable' => $tax,
+            'status' => $total==0 ? 1 : 0
+        ]);
+
+        if ($request['creditamount']) {
+            $creditAmount = $request['creditamount'];
+            Payment::create ([
+                'amount' => $creditAmount,
+                'ref' => "credit",
+                'order_id' => $order->id
+            ]);
+
+            if ($total == $creditAmount) {
+                $order->update([
+                    'status' => 1
+                ]);
+            }
+
+            
+            $credit = Credit::where('customer_id',$customer->id)->first();
+            if ($credit->Count()) {
+                if ($credit->amount>$creditAmount) {
+                    $credit->amount-=$creditAmount;
+                    $credit->update();
+                } else 
+                    $credit->delete();
+
+            }
+        }
+
+        return $order->id;
+    }
+
+    public function print($id,$output='') {
+
+        $order=Order::find($id);
+        $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
+        $ret = $printOrder->print($order,$output); // Print newly create proforma.
+        if ($ret)
+            return redirect("admin/orders");
+    }
+
+    public function printStatementsDue() {
+        $this->displayPDF=false;
+        
+            $orders = Order::join('customer_order','orders.id','=','customer_order.order_id')
+            ->where('status',0)
+            ->where('method','<>','On Memo')
+            ->where('method','<>','Repair')
+            ->where('orders.created_at','<=',date("Y-m-d 23:59:59", strtotime("last day of previous month")))
+            ->groupBy('customer_id')
+            ->get(); 
+
+            //print_r(date("Y-m-d", strtotime("last day of previous month")));die;
+        foreach ($orders as $order) {
+            $payments = $order->payments()->orderBy('created_at','desc')->limit(1)->get();
+            
+            if(!$payments->isEmpty()) {
+                foreach ($payments as $payment) {
+                    //$nowDate=Carbon::now();
+                    $nowDate = Carbon::createFromDate(2017, 10, 15, 'America/New_York');
+                    $paymentDate=Carbon::createFromFormat('m-d-Y',date('m-d-Y',strtotime($payment->created_at)))->addDays(20);
+                    
+                    //echo $order->id.' '.$nowDate.' '. $paymentDate.'<br>';
+                    $timeDiff = $nowDate->diffInDays($paymentDate);
+                    if ($timeDiff >= 20) {
+                        $this->printStatement($order->id,$order);
+                    }
+                    //echo '<pre>';print_r($timeDiff);    
+                }
+            } else {
+                $nowDate=Carbon::now();
+                $orderDate=Carbon::createFromFormat('m-d-Y',date('m-d-Y',strtotime($order->created_at)));
+                $timeDiff = $orderDate->diffInDays($nowDate);
+                //if ($timeDiff >= 20) {
+                    $this->printStatement($order->id,$order);
+                //}
+                //echo $order->id.' '.$nowDate.' '.$orderDate.'<br>';
+                //echo '<pre>';print_r($timeDiff);
+                
+            }
+        }
+
+        PDF::Output(str_replace(' ','-',$order->b_company).'- Order -'.$order->id.'.pdf', 'I');
+    }
+
+    private function initializePDF($pdf) {
+        // set document information
+        PDF::setHeaderCallback(function($pdf){
+            // Logo
+            $image_file = 'assets/berdvaye-logo-pdf.jpg';
+            $pdf->Image($image_file, 14, 10, 35, '', 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+            // Set font
+            //$pdf->SetFont('helvetica', 'T', 10);
+            // Title            
+        });
+
+        if ($this->displayPDF==true) {
+            PDF::setFooterCallback(function($pdf){
+                // Position at 15 mm from bottom
+                $pdf->SetY(-15);
+                // Set font
+                $pdf->SetFont('helvetica', 'I', 8);
+                    // Page number
+                $pdf->Cell(0, 10, 'Page '.$pdf->getAliasNumPage().'/'.$pdf->getAliasNbPages(), 0, false, 'C', 0, '', 0, false, 'T', 'M');
+            });
+        }
+
+        // set header and footer fonts
+        $pdf::setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+        $pdf::setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+
+        // set default monospaced font
+        $pdf::SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+        // set margins
+        $pdf::SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
+        $pdf::SetHeaderMargin(PDF_MARGIN_HEADER);
+        $pdf::SetFooterMargin(PDF_MARGIN_FOOTER);
+
+        // set auto page breaks
+        $pdf::SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+
+        // set image scale factor
+        $pdf::setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+        // set some language-dependent strings (optional)
+        if (@file_exists(dirname(__FILE__).'/lang/eng.php')) {
+            require_once(dirname(__FILE__).'/lang/eng.php');
+            $pdf::setLanguageArray($l);
+        }
+
+        // ---------------------------------------------------------
+        // add a page
+        $pdf::AddPage(); 
+        $pdf::setXY($pdf::getPageWidth()-55,25);
+        ob_start();
+        ?>
+        <table cellpadding="3">
+            <tr>
+                <td style="text-align:right"><div style="font-size:25px;color:#6b8dcb;font-weight:bold">Statement</div></td>
+            </tr>
+            <tr>
+                <td style="font-size: 12px;text-align:right;font-family:helvetica"><?= date('F d, Y',time()) ?></td>
+            </tr>
+        </table>
+        <?php
+        
+        $pdf::WriteHTML(ob_get_clean(), true, false, false, false, ''); 
+        $pdf::SetFont('helvetica', '', 10);
+        $pdf::setY(23);
+        $pdf::WriteHTML('610 5th Ave PO Box 2222<br>New York, NY 10185<br>833.237.3829<br>www.berdvaye.com', true, false, false, false, '');
+        // -----------------------------------------------------------------------------
+
+        $pdf::Ln();$pdf::Ln();$pdf::Ln();
+    }
+
+    public function printStatement($id,$order=null,$statementDate='') {
+        if ($this->displayPDF==true)
+            $order=Order::find($id);
+
+        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+        $this->initializePDF($pdf);
+        
+        $countries = new \App\Libs\Countries;
+        $country = $countries->getCountry($order->b_country);
+        $state_b = $countries->getStateCodeFromCountry($order->b_state);
+        $state_s = $countries->getStateCodeFromCountry($order->s_state);
+        
+        $creditUsed=false;
+        $orderAmount=0;
+
+        ob_start();
+        ?>
+            <table cellpadding="1">
+            <tr>
+                <td style="width: 43%;">
+                    <b>Bill To</b>:
+                </td>
+                <td style="width: 80px"></td>
+                <td style="width: 43%;">
+                    <b>Ship To</b>:
+                </td>                    
+            </tr>
+            <tr>
+                
+                <td style="width: 43%;">    
+                    <?= $order->b_firstname . ' ' . $order->b_lastname ?><br>
+                    <?= !empty($order->b_company) ? $order->b_company . '<br>' : '' ?>
+                    <?= !empty($order->b_address1) ? $order->b_address1 .'<br>' : ''?>
+                    <?= !empty($order->b_address2) ? $order->b_address2 .'<br>' : '' ?>
+                    <?= !empty($order->b_city) ? $order->b_city .', '. $state_b . ' ' . $order->b_zip.'<br>': '' ?>
+                    <?= !empty($country) ? $country.'<br>' : '' ?>
+                    <?= !empty($order->b_phone) ? $order->b_phone . '<br>' : '' ?>
+                    
+                </td>
+                <td style="width: 80px"></td>
+                <td style="width: 43%;">
+                    <?= $order->s_firstname . ' ' . $order->s_lastname ?><br>
+                    <?= !empty($order->s_company) ? $order->s_company . '<br>' : '' ?>
+                    <?= !empty($order->s_address1) ? $order->s_address1 .'<br>' : ''?>
+                    <?= !empty($order->s_address2) ? $order->s_address2 .'<br>' : '' ?>
+                    <?= !empty($order->s_city) ? $order->s_city .', '. $state_s . ' ' . $order->s_zip.'<br>': '' ?>
+                    <?= !empty($country) ? $country.'<br>' : '' ?>
+                    <?= !empty($order->s_phone) ? $order->s_phone . '<br>' : '' ?>
+                </td>
+            </tr>
+        </table>
+            <?php $products=array(); ?>
+            <table cellpadding="5">
+                <thead>
+                    <tr style="background-color: #3b4e87;color:#fff">
+                        <th style="width: 80px;border: 1px solid #999;color:#fff">Date</th>
+                        <th style="width: 200px;border: 1px solid #999;color:#fff">Reference</th>
+                        <th style="width: 250px;border: 1px solid #999;color:#fff">Description</th>
+                        <th style="width: 110px;border: 1px solid #999;color:#fff">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                        $customer_id=$order->customers->first()->id;
+                        $orders = Order::whereHas('customers',function($query) use($customer_id) {
+                            $query->where('id', $customer_id);
+                        })
+                        ->where('status',0)
+                        ->where('method','<>','On Memo')
+                        ->where('method','<>','Repair')
+                        ->get();
+
+                        $totals = 0;
+                    foreach ($orders as $order) { 
+                        $totals += $order->total;
+                    ?>
+                    
+                    <tr>
+                        <td width="80" style="border-bottom: 1px solid #ddd"><?= $order->created_at->format('m/d/Y') ?></td>
+                        <td width="160" style="border-bottom: 1px solid #ddd"><?= 'Inv. '.$order->id ?></td>
+                        <td width="290" style="border-bottom: 1px solid #ddd"></td>
+                        <td width="110" style="text-align:right;border-bottom: 1px solid #ddd"><?= number_format($order->total,2) ?></td>
+                    </tr>
+                        <?php foreach($order->payments->all() as $payment) { ?>
+                        <tr>
+                            <td style="border-bottom: 1px solid #ddd"><?= $payment->created_at->format('m/d/Y') ?></td>
+                            <td style="border-bottom: 1px solid #ddd"><?= 'Inv. '.$order->id ?></td>
+                            <td style="border-bottom: 1px solid #ddd">Payment Received [<?= $payment->ref ?>]</td>
+                            <td style="text-align:right;border-bottom: 1px solid #ddd">-<?= number_format($payment->amount,2) ?></td>
+                        </tr>
+                        <?php $totals = $totals - $payment->amount; ?>
+                        <?php } ?>
+
+                        <?php foreach ($order->orderReturns as $return) { ?>
+                        <?php $product = Product::find($return->pivot->product_id) ?>
+                        <tr>
+                            <td width="80" style="border-bottom: 1px solid #ddd"><?= $return->pivot->created_at->format('m/d/Y') ?></td>
+                            <td width="160" style="border-bottom: 1px solid #ddd"><?= 'Inv. '.$order->id ?></td>
+                            <td width="290" style="border-bottom: 1px solid #ddd">Return for <?= $product->p_model . $product->p_serial ?> </td>
+                            <td width="110" style="text-align:right;border-bottom: 1px solid #ddd">-<?= number_format($return->pivot->amount,2) ?></td>
+                        </tr>
+                        <?php $totals = $totals - $return->pivot->amount; ?>
+                    <?php } ?>
+
+                    <?php } ?>
+                    <?php if ($credit = Credit::where('customer_id',$customer_id)->first()) { ?>
+                    <tr>
+                        <td style="border-bottom: 1px solid #ddd"><?= $credit->created_at->format('m/d/Y') ?></td>
+                        <td style="border-bottom: 1px solid #ddd"></td>
+                        <td style="border-bottom: 1px solid #ddd">Credit</td>
+                        <td style="text-align:right;border-bottom: 1px solid #ddd">-<?= number_format($credit->amount,2) ?></td>
+                    </tr>
+                    <?php $totals = $totals - $credit->amount ?>
+                    <?php } ?>
+                    <tr>
+                        <td colspan="3" style="text-align:right;border-top: 2px solid #eee;background-color: #3b4e87;color:#fff">BALANCE DUE</td>
+                        <td style="text-align:right;border-top: 2px solid #eee;border-left: 2px solid #eee;background-color:#d2d9ec">$ <?= number_format($totals,2) ?></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            
+
+            <?php
+                // $pdf::Ln();
+                // $pdf::WriteHTML(ob_get_clean(), true, false, false, false, ''); ?>
+             
+            <?php
+                // $pdf::Ln();
+                // $pdf::Cell(0,0,'Please detach the remittance slip below and return it with your payment');
+                // echo str_repeat('.',183);
+                // $pdf::Ln();
+            ?>
+
+            <table style="padding-top: 25px">
+                <tr>
+                    <td valign="bottom">Please detach the remittance slip below and return it with your payment</td>
+                </tr>
+            </table>
+            <?=  str_repeat('.',183); ?>
+            <div style="text-align: center">REMITTANCE</div>
+            
+            <br><table style="width: 100%" cellpadding="3">
+                <tr>
+                    <td style="width: 56%">Please make checks payable to Berd Vaye Inc. and mail to:</td>
+                    <td style="width: 30%;text-align:right">STATEMENT DATE</td>
+                    <td style="width: 15%;text-align:right"><?=date('m/d/Y',time())?></td>
+                </tr>
+                <tr>
+                    <td style="width: 56%"></td>
+                    <td style="width: 30%;text-align:right">CUSTOMER ID</td>
+                    <td style="width: 15%;text-align:right"><?=$customer_id?></td>
+                </tr>
+            </table>
+            
+            <br>
+            <br>BerdVaye Inc.<br>610 5th Ave PO Box 2222<br>New York, NY 10185<br>United States
+            <br><table style="width: 100%" cellpadding="5" cellspacing="5">
+                <!-- <tr>
+                    <td style="width: 56%"></td>
+                    <td style="width: 30%;text-align:right"><b>DUE DATE</b></td>
+                    <td style="width: 15%;text-align:right;border:1px solid #eee;width: 100px"><?= date('m/1/Y', strtotime("+30 days")) ?></td>
+                </tr> -->
+                <tr>
+                    <td style="width: 56%"></td>
+                    <td style="width: 30%;text-align:right"><b>BALANCE DUE</b></td>
+                    <td style="width: 15%;text-align:right;border:1px solid #eee;width: 100px">$  <?= number_format($totals,2) ?></td>
+                </tr> 
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>                 
+                <tr>
+                    <td style="width: 56%;text-align:left">Please write Customer ID on your check.</td>
+                    <td style="width: 30%;text-align:right"><b>AMOUNT ENCLOSED</b></td>
+                    <td style="width: 15%;text-align:right;border:1px solid #eee;width: 100px"></td>
+                </tr>                
+            </table>
+            
+            <?php
+            $pdf::WriteHTML(ob_get_clean(), true, false, false, false, '');
+
+        //Close and output PDF document
+        
+        if ($this->displayPDF==true) {
+            PDF::Output(str_replace(' ','-',$order->b_company).'- Order -'.$order->id.'.pdf', 'I');
+        }
+    }
+
+    public function copyInvoice(Request $request,$id)
+    {
+        $order = Order::find($id);
+        return view('admin.orders.copyinvoice',['pagename' => 'Copy Invoice','order' => $order]);
+    }
+
+    public function storeInvoice(Request $request) {
+        $id=$this->storeOrder($request->all());
+        return redirect("admin/orders/$id");
+    }
+
+    public function memotransfer(Request $request,$id)
+    {
+        $order = Order::find($id);
+        return view('admin.orders.memotransfer',['pagename' => 'Memo to Invoice','order' => $order]);
+    }
+
+    public function memoStore(Request $request)
+    {
+        $oldOrder = Order::find($request['order_id']);
+        if ($oldOrder->products->count() == 0) {
+            $oldOrder->update([
+                'status' => 2,
+                'total' => 0
+            ]);
+        }
+        dd('');
+        //dd($oldOrder->products->count());
+        if ($oldOrder) {
+            if ($oldOrder->method=='On Memo' || $oldOrder->method=='Repair') {
+                $created_at = $request['created_at'];
+                
+                if ($request['b_country']!='231') 
+                    $request['b_state'] = '';
+
+                if ($request['s_country']!='231') 
+                    $request['s_state'] = '';
+
+                $orderarray = $request->all();
+                $orderarray['status'] = 0;
+
+                if ($created_at) {
+                    $orderarray['created_at']=date('Y-m-d H:i:s', strtotime($created_at));
+                    $orderarray['updated_at']=date('Y-m-d H:i:s', strtotime($created_at));
+                }
+                
+                $excludeArray = array('customer_id','order_id','product_name','qty','price','serial','payment','created_at','model','discount');
+                foreach ($orderarray as $key => $index) {
+                    if ( in_array($key,$excludeArray)) {
+                            unset($orderarray[$key]);
+                    }
+                }
+                //dd($orderarray);
+                $order = Order::create($orderarray);
+                $customer = Customer::find($request['customer_id']);
+                $order->customers()->attach($customer->id);
+                $subtotal = 0;
+                $tax = 0;
+        
+                if ($customer->cgroup == 0 && $order->method!='On Memo') 
+                    $tax = Taxable::where('state_id',$request['s_state'])->value('tax');
+                
+                // $status = 0;
+                
+                // if ($request['payment'] == 'On Memo' || $request['payment'] == 'Repair')
+                //     $status = 1;
+
+                $keys = array_keys($request['qty']);
+                $prev1='p';$prev2='p';
+                foreach ($keys as $key) {
+                    $product_id = $key;
+                    $qty = $request['qty'][$key];
+                    $price = $request['price'][$key];
+                    $serial = $request['serial'][$key];
+        
+                    $product = Product::find($product_id);
+                    $order->products()->attach($product_id, [
+                        'qty' => $qty,
+                        'price' => $price,
+                        'serial' => $serial,
+                        'memo_id' => $oldOrder->id
+                    ]);
+        
+                    //if ($status==0){
+                        // Just changed 12/14/20
+                    $product->decrement('p_qty');
+                        // $tqty = $product->p_qty - $qty;
+                        // $product->update([
+                        //     'p_qty' => $tqty,
+                        // ]);
+                    //}
+
+                    $subtotal = $subtotal + ($price*$qty);
+                    $productExists = $oldOrder->products()->where('serial',$serial);
+
+                    if ($productExists->exists()) {
+                        $oldProduct = $productExists->get();
+                        $oldOrder->products()->detach($oldProduct);
+                        
+                        if ($oldOrder->comments && $prev1=='p')
+                            $prev1=$oldOrder->comments."\n";
+                        else $prev1='';
+
+                        $oldOrder->update([
+                            'comments'=>$prev1.$product->p_size . ' ' . $product->p_title . ' ' . $product->p_reference." (SN: $product->p_serial) was transferred to invoice#: ".$order->id,
+                            // removed status = 2 on 12/14/20
+                        ]);
+                        $prev1='';
+
+                        if ($order->comments && $prev2=='p')
+                            $prev2=$order->comments."\n";
+                        else $prev2='';
+
+                        //$order->update([
+                        //    'comments'=>$prev2.$product->p_size . ' ' . $product->p_title . ' ' . $product->p_reference." (SN: $product->p_serial) was transferred from memo#: ".$oldOrder->id,
+                            //'previous_id' => $oldOrder
+                        //]);
+                        $prev2='';
+                    } 
+                }
+                
+                // added this line on 12/14/20
+                if ($oldOrder->products->count() == 0) {
+                    $oldOrder->update([
+                        'status' => 2,
+                        'total' => 0
+                    ]);
+                } // added this line on 12/14/20
+
+                $this->refreshOrderTotals($order);
+                $this->refreshOrderTotals($oldOrder);
+            }
+        }
+
+        return redirect("admin/orders/".$order->id);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $order = Order::find($id);
+        if (!$order)
+            return response()->view('errors/admin-notfound',['id'=>$id],404);
+
+            if ($order->status == 0) 
+            $status = "UnPaid";
+        elseif ($order->status == 1)
+            $status = "Paid";
+        elseif ($order->status == 2)
+            $status = "Transferred";
+        else $status = "Returned";
+        
+
+        return view("admin.orders.edit",['pagename' => 'Invoice #'.$id . ' - ' .  $status, 'order' => $order]);
+    }
+
+    // Deletes individual product from the order when in edit mode.
+    public function destroyproduct(Request $request) {
+        if ($request->ajax()) {
+            $id = $request['orderid'];
+            $product_id = $request['productid'];
+            $order = Order::find($id);
+            $product = $order->products->find($product_id);
+            \DB::table('order_product')
+                    ->where('id', $request['opid'])
+                    ->delete();
+
+            //$order->products()->detach($product);
+            $cgroup = $order->customers->first()->cgroup;
+            $subtotal = 0;
+            $total = 0;
+            $tax = 0;
+
+            $order->load('products'); // Refreshes products after removal from the table
+
+            if ($product->category_id!=74)  {
+                if ($order->method != 'On Memo')
+                    $product->update([
+                        'p_qty' => $product->p_qty + $product->pivot->qty,
+                        'p_status' => 0
+                    ]);
+                else 
+                    $product->update([
+                        'p_status' => 0
+                    ]);
+            }
+            
+            $this->refreshOrderTotals($order);
+                       
+            return response()->json('success');
+        }
+    }
+
+    public function refreshOrderTotals($order) {
+        $cgroup = $order->customers->first()->cgroup;
+        $subtotal = 0;
+        $total = 0;
+        $tax = 0;
+
+        foreach ($order->products as $product) {
+            $qty = $product->pivot->qty;
+            if ($qty > 0) {
+                $price = $product->pivot->price;
+                $subtotal = $subtotal + ($price*$qty);
+            }
+        }
+        
+        //dd($subtotal);
+        $freight = $order->freight;
+        $discount = $order->discount;
+
+        if ($cgroup == 0 && $order->method!='On Memo') {
+            $tax = Taxable::where('state_id',$order->s_state)->value('tax');
+            $total = $subtotal + ($subtotal * ($tax/100))+$freight;
+        } else {
+            $tax = 0;
+            $total = $subtotal+$freight;
+        }
+        
+        $orderTotal = 0;
+        foreach($order->payments->all() as $payment) {
+            $orderTotal = $orderTotal+$payment->amount;
+        }
+
+        $status=$order->status;
+
+        if ($orderTotal+$discount == $total)
+            $status = 1;
+
+        $order->update([
+            'subtotal' => $subtotal,
+            'total' => $total-$discount,
+            'taxable' => $tax,
+            'freight' => $freight,
+            'status' => $status
+        ]);
+    }
+    
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+
+        $status = 1; // 1 = paid 2 = unpaid
+        if ($request['payment_options'] != 'None') {
+            $status = 0;
+        } elseif ($request['payment'] == 'On Memo' || $request['payment'] == 'Repair'){
+            $status = 0;
+        }
+
+        $orderarray = array_slice($request->all(),2);
+        
+        $order = Order::find($id);
+        $method = $order->method;
+
+        $customer = Customer::findOrFail($request['customer_id']);
+
+        if (!$customer->address1) {
+             $data = array(
+                 'firstname' => $request['b_firstname'],
+                 'lastname' => $request['b_lastname'],
+                 'address1' => $request['b_address1'],
+                 'address2' => $request['b_address2'],
+                 'phone' => localize_us_number($request['b_phone']),
+                 'country' => $request['b_country'],
+                 'state' => $request['b_state'],
+                 'city' => strtoupper($request['b_city']),
+                 'zip' => $request['b_zip']
+             );
+             $customer->update($data);
+        }
+
+        $order->customers()->detach();
+        $order->customers()->attach($request['customer_id']);
+
+        $counter=0;
+        $product_ids=array();$previous_serial='';
+        if (isset($request['product_id'])) {
+            foreach ($request['product_id'] as $index => $key) {
+                $product_id = $key;
+                $price = $request['price'][$index];
+                $product_name = $request['product_name'][$index];
+                $product_ids[]=$product_id;
+                $serial = $request['serial'][$index];
+
+                $retail = isset($request['retail'][$index]) ? $request['retail'][$index] : 0;
+
+                if ($request['op_id'][$index]==0) {
+                    $qty = $request['qty'][$index];
+                    
+                    if ($product_id){
+                        $product = Product::find($product_id);
+                        $order->products()->attach($product->id, [
+                            'qty' => $qty,
+                            'price' => $price,
+                            'serial' => $serial,
+                            'product_name' => $product_name,
+                            'retail' => $retail
+                        ]);
+                        
+                        if ($product->id != 491) { // misc item
+                            $product->decrement('p_qty');
+                        }
+                        
+                    }
+
+                    $counter++;
+                } else {
+                    $qty = $request['qty'][$index];
+                    
+                    if ($status==1 && $method=='Invoice') {
+                        $product = Product::find($product_id);
+                        $product->update([
+                            'p_qty' => $qty + $product->qty,
+                            'p_status' => $status
+                        ]);
+                    } elseif ($status==0 && $method=='On Memo') {
+                        $product = Product::find($product_id);
+                        
+                        $product->update([
+                            'p_qty' => 0,
+                            'p_status' => $status
+                        ]);
+
+                    } 
+                    
+                    if ($request['payment'] == 'Canceled') {
+                        $product = Product::find($product_id);
+                        
+                        $product->update([
+                            'p_qty' => 1,
+                            'p_status' => 0
+                        ]);
+
+                        $qty = 0;
+
+                    } elseif ($method == "Invoice") {
+                        if ($qty == 0) {
+                            $product = Product::find($product_id);
+                            $product->update([
+                                'p_qty' => 1,
+                            ]);
+                        } 
+                    } 
+
+                    $op_id = $request['op_id'][$index];
+                    
+                    if ($op_id > 0) {
+                        $previous_product = ['qty'=>$qty,'price'=>$price,'product_name'=>$product_name,'retail'=>$retail];
+
+                        $previous_serial = $request['previous_serial'][$index];
+                        if ($previous_serial == 'Backorder') {
+                            $previous_product['serial'] = $serial;
+                            //$previous_product['previous_product_id'] = 
+                        }
+
+                        \DB::table('order_product')       
+                            ->where('id', $op_id)
+                            ->update($previous_product);
+                    }
+                }
+            }
+
+            //$this->setAmazonItemOutOfStock($product_ids);
+        }
+        
+        // if ($order->tracking=='' && $orderarray['tracking']) {
+        //     $data = array(
+        //         'template' => 'emails.tracking',
+        //         'to' =>'info@arnoldandsonusa.com',
+        //         'order_id' => $order->id,
+        //         'subject' => 'Tracking for # ' . $order->b_company,
+        //         'company' => $order->b_company,
+        //         'tracking' => $orderarray['tracking'],
+        //         'from_name' => 'Berd Vaye Inc,'
+        //     );
+    
+        //     $gmail = new GmailCustomer($data);
+        //     $gmail->send();
+
+        // }
+
+        $order->update($orderarray);
+
+        $this->refreshOrderTotals($order);
+        return redirect("admin/orders");
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        $order = Order::find($id);
+        
+        foreach ($order->products as $product) {
+            $product->p_qty = $product->p_qty + $product->pivot->qty;
+            $product->p_status = 0;
+            $product->update();
+        }
+
+        $order->products()->detach();
+        $order->customers()->detach();
+
+        $payment = Payment::where('order_id',$id);
+        $payment->delete();
+
+        $order->delete();
+
+        Session::flash('message', "Successfully deleted invoice!");
+        return back();
+    }
+}

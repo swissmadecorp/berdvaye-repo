@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@plugin "flowbite/plugin";
+
+@font-face{
+    font-family: 'Playfair Display';
+    font-display: pl;
+    font-weight:normal;
+    font-style:normal;
+    src: url('/public/fonts/PlayfairDisplay-Regular.otf') ;
+ }
+
+ @font-face{
+  font-family: 'Vorkurs';
+  font-weight:normal;
+  font-style:normal;
+  src: url('/public/fonts/II Vorkurs Light.ttf') ;
+}
+
+@source "../node_modules/flowbite";
+
+@theme {
+  --font-sans: Figtree, ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-playfair: 'Playfair Display', Roboto;
+    --font-vorkurs: Vorkurs;
+    --color-mint-500: oklch(0.72 0.11 178 1);
+    --color-cream-300: #f9dea6;
+    --color-cream-400: #e5c279;
+    --color-cream-500: #afa185;
+    --color-cream-100: oklch(0.69 0.12 80 1);
+    --color-darkred: #980000;
+    --color-darkgray: #101010;
+    --color-gray-500: oklch(0.52 0 1);
+    --color-gray-400: oklch(0.42 0 1);
+    --color-gray-300: oklch(0.89 0 1);
+    --color-gray-900: oklch(0.2 0 1);
+    --shadow-3xl: 0 15px 15px oklch(0.46 0 0 1);
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant custom (@media (width <= 820px));
+@custom-variant xm (@media (min-width: 876px));
+@custom-variant pagination (@media (min-width: 800px));
+
+/* Custom screen - 820px */
+@variant custom {
+    display: block
+}
+
+/* Pagination screen - 800px */
+@variant  pagination {
+  display: flex;
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@utility font-playfair {
+  font-family: var(--font-playfair);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  .cards li {
+    @apply list-none p-0 m-0 w-56 h-72 text-center leading-[18rem] text-2xl
+           font-sans bg-black border border-gray-300 absolute top-0 left-0 rounded-lg;
+  }
+
+}
+
+.line-clamp-20 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  -webkit-line-clamp: 20; /* number of lines */
+}
