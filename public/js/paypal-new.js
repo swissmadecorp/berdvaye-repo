@@ -1,4 +1,4 @@
-// Render the button component
+// Render the button component and Card Fields component
 paypal
   .Buttons({
     // Sets up the transaction when a payment button is clicked
