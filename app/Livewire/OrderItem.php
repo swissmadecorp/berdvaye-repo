@@ -169,7 +169,6 @@ class OrderItem extends Component
                 }
             }
 
-
             $validatedData = $this->validate(
                 $this->rules(),
                 $this->messages
@@ -252,20 +251,28 @@ class OrderItem extends Component
                 if (!$item['op_id']) {
                     $product_ids[]=$product_id;
 
-                    $productArray = [
-                        'estimate_id' => $order->id,
-                        'p_model' => $p_model,
-                        'qty' => $qty,
-                        'price' => $price,
-                        'retail_price' => $retail,
-                        'product_name' => $product_name,
-                    ];
-
                     if ($price) {
                         if (!$this->transferToOrder) {
+                            $productArray = [
+                                'estimate_id' => $order->id,
+                                'p_model' => $p_model,
+                                'qty' => $qty,
+                                'price' => $price,
+                                'retail_price' => $retail,
+                                'product_name' => $product_name,
+                            ];
                             \DB::table('estimate_product')->insert($productArray);
                         } else {
-                            $productArray['serial'] = 'N/A';
+                            $productArray = [
+                                'product_id' => $product_id,
+                                'order_id' => $order->id,
+                                'qty' => $qty,
+                                'price' => $price,
+                                'retail' => $retail,
+                                'product_name' => $product_name,
+                                'serial' => $item['serial']
+                            ];
+
                             \DB::table('order_product')->insert($productArray);
                         }
                     }

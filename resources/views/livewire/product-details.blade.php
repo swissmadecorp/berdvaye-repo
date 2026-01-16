@@ -64,7 +64,7 @@
                 @if ($currentProduct->total_parts)
                 <p class="productBox-part callParts dark:text-white text-gray-300">Number of Parts: {{$currentProduct->total_parts}}</p>
                 @endif
-                <p class="productBox-part callWeight dark:text-white text-gray-300">Weight: <span>{{ $currentProduct->weight }}</span> </p>
+                <p class="productBox-part callWeight dark:text-white text-gray-300">Weight: <span>{{ $currentProduct->weight }} lbs.</span> </p>
                 @if ($currentProduct->dimensions)
                 <p class="productBox-part callSize dark:text-white text-gray-300">Dimensions: <span>{{ $currentProduct->dimensions }}</span> <small>Inches</small></p>
                 @endif

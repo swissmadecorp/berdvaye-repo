@@ -10,6 +10,7 @@ use Livewire\Attributes\Js;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\Rule;
 use Livewire\WithPagination;
+use App\Services\PayPalService;
 use App\Models\Payment;
 use Jantinnerezo\LivewireAlert\Enums\Position;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
@@ -116,8 +117,7 @@ class Invoices extends Component
         $this->dispatch('create-new');
     }
 
-    public function removeInvoice($id)
-    {
+    public function removeInvoice($id) {
         $order = Order::find($id);
         $product_ids = array();
         foreach ($order->products as $product) {
@@ -142,10 +142,64 @@ class Invoices extends Component
         request()->session()->flash('message', "Successfully deleted invoice!");
     }
 
+    private function generateAccessToken() {
+        $payPalURL = "https://api-m.paypal.com";
+
+        $PAYPAL_CLIENT_ID = config('paypal.live.client_id');
+        $PAYPAL_CLIENT_SECRET = config('paypal.live.client_secret');
+
+        if (!$PAYPAL_CLIENT_ID || !$PAYPAL_CLIENT_SECRET) {
+            throw new Exception("MISSING_API_CREDENTIALS");
+        }
+
+        $auth = base64_encode($PAYPAL_CLIENT_ID . ":" . $PAYPAL_CLIENT_SECRET);
+
+        // Disabling certificate validation for local development
+        $client = new Client(['verify' => false]);
+        $response = $client->post($payPalURL."/v1/oauth2/token", [
+            'form_params' => [
+                'grant_type' => 'client_credentials'
+            ],
+            'headers' => [
+                'Authorization' => "Basic $auth"
+            ]
+        ]);
+
+        $data = json_decode($response->getBody(), true);
+        return $data['access_token'];
+    }
+
+
+    /**
+    * Issue a Refund
+    * * @param string $captureId  The Transaction ID (e.g. 3C679...)
+    * @param float|null $amount Optional. If null, refunds FULL amount.
+    * @return array
+    */
+    public function refundInvoice($order) {
+        $paypal =  app(PayPalService::class);
+
+        // dd($order->transaction_id);
+        $response = $paypal->refund($order);
+
+        if ($response['success']) {
+            LivewireAlert::title('Successfully refunded the customer!')->success()->position(Position::TopEnd)->toast()->show();
+        } else {
+            $errorMessage = $response['error_message'] ?? 'An error occurred during the refund process.';
+            LivewireAlert::title('Refund Failed')
+                ->withConfirmButton('Ok')
+                ->error()
+                ->text($errorMessage)
+                ->asInfo()
+                ->show();
+        }
+    }
+
     public function deleteInvoice($id)
     {
         $order = Order::find($id);
-        // $product_ids = array();
+
+        $product_ids = array();
         foreach ($order->products as $product) {
             if ($product->p_status != 4 && $product->category_id!=74) {
                 if ($order->method != "On Memo") {
@@ -170,6 +224,9 @@ class Invoices extends Component
 
     public function returnAllProducts($id) {
         $order = Order::find($id);
+        if ($order->transaction_id)
+            $response = $this->refundInvoice($order);
+
         if (isset($order->payments)) {
             if ($order->payments->count()) {
                 $payment = $order->payments->sum('amount');
@@ -181,7 +238,7 @@ class Invoices extends Component
 
         foreach ($order->products as $product) {
             if ($product->p_status != 4 && $product->category_id!=74) {
-                if ($order->method != "On Memo")
+                if ($order->method != "On Memo" && $order->method != "Repair")
                     $product->p_qty = $product->p_qty + $product->pivot->qty;
 
                 $product->p_status = 0;
@@ -193,9 +250,20 @@ class Invoices extends Component
 
         $order->subtotal = 0;
         $order->total = 0;
-        $order->status = 2;
+        $order->status = 3; // Returned
         $order->update();
 
+        if ($response['success']) {
+            LivewireAlert::title('Successfully refunded the customer!')->success()->position(Position::TopEnd)->toast()->show();
+        } else {
+            $errorMessage = $response['error_message'] ?? 'An error occurred during the refund process.';
+            LivewireAlert::title('Refund Failed')
+                ->withConfirmButton('Ok')
+                ->error()
+                ->text($errorMessage)
+                ->asInfo()
+                ->show();
+        }
     }
 
     public function render()

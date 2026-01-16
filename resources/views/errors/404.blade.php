@@ -31,7 +31,7 @@
       <div class="container clearfix">
         <ul>
           <li><img src="/images/product/hgs/thumb/thumb_01.jpg" alt="thumb_01"></li>
-          <li><img src="/images/product/product_05/thumb/thumb_02.jpg" alt="thumb_02"></li>
+          <li><img src="/images/product/frl/thumb/thumb_02.jpg" alt="thumb_02"></li>
           <li><img src="/images/product/cbl-ha/thumb/thumb_03.jpg" alt="thumb_03"></li>
         </ul>
       </div>

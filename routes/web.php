@@ -48,41 +48,24 @@ Route::get('getStateFromCountry', "App\Http\Controllers\CountriesController@getS
 Route::get('getStateByCountry', "App\Http\Controllers\CountriesController@getStateByCountry");
 Route::post('ajaxInquiry', "App\Http\Controllers\InquiryController@ajaxInquiry")->name('ajax.inquiry');
 
-
-// Route::get('biography', function()
-// {
-//     return View::make('biography',['currentPage'=>'Biography','stockJquery'=>true]);
-// });
-
-// Route::get('contact-us', function()
-// {
-//     $categories = \App\Category::all();
-//     return View::make('contact-us',['currentPage'=>'Contact Us','sidebar'=>'false','categories' => $categories,'stockJquery'=>true]);
-// });
-
 Route::group(['middleware' => 'web'], function () {
-    Route::get('cart', 'App\Http\Controllers\CartController@cart')->name('cart');
-    Route::get('temp', 'App\Http\Controllers\ProductsController@temp');
+    Route::get('/google-merchant.xml', function () {
+        $products = \App\Models\ProductRetail::where('is_active', true)->get();
 
-    Route::post('cart/checkout', 'App\Http\Controllers\CartController@checkout');
-    //Route::post('finalizePurchase', 'CartController@finalizePurchase');
+        return response()
+            ->view('google-merchant', compact('products'))
+            ->header('Content-Type', 'application/xml');
+    });
 
-    Route::post('payment/thankyou', 'App\Http\Controllers\CartController@Thankyou')->name('payment.thankyou');
+    Route::get('payment/thankyou', 'App\Http\Controllers\CartController@Thankyou')->name('payment.thankyou');
     Route::get('payment/alldone', 'App\Http\Controllers\CartController@alldone')->name('all.done');
     Route::get('get/tax', 'App\Http\Controllers\CartController@getTax')->name('get.tax.value');
     Route::post('payment/{orderID}/capture', 'App\Http\Controllers\CartController@Capture')->name('payment.capture');
     Route::post('payment/order', 'App\Http\Controllers\CartController@order')->name('payment.order');
 
-    Route::get('product/{slug}', 'App\Http\Controllers\ProductsController@productDetails')->name('product.details');
-    // Route::get('products/{slug}', 'App\Http\Controllers\ProductsController@productDetailsNew')->name('product.details.new');
-
-    // Route::get('welcome', 'App\Http\Controllers\ProductsController@welcome')->name('welcome');
-    // Route::get('sculptures', 'App\Http\Controllers\ProductsController@sculptures')->name('sculptures');
-
     Route::get('/sculptures', Sculptures::class);
     Route::get('/sculptures/{slug}', ProductDetails::class);
 
-    // Route::get('productdetails', 'App\Http\Controllers\ProductsController@productDetails')->name('product.details');
     Route::get('cart/unsuccessful', 'App\Http\Controllers\CartController@Unsuccessful');
     Route::post('cart/payment', 'App\Http\Controllers\CartController@checkoutpayment');
     Route::post('cart/product/remove','App\Http\Controllers\CartController@remove')->name('cart.remove');
@@ -120,7 +103,7 @@ Route::get('getretailprice','App\Http\Controllers\ProductRetailController@getRet
 Route::get('/{page}', 'App\Http\Controllers\ProductsController')
     ->name('page')
     ->where('page',
-    'process-finishing|process-deconstruction|deconstruction|design|forming|process|process-design|media|privacy-policy|terms-and-conditions|videos|about|contact');
+    'process-finishing|process-deconstruction|deconstruction|design|forming|process|process-design|media|privacy-policy|terms-and-conditions|about|contact');
 
 
 // ===============================================

@@ -7,6 +7,7 @@ use App\Models\Taxable;
 use App\Models\Customer;
 use App\Models\Estimate;
 use App\Libs\Countries; // Assuming you have this helper class
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Client;
 use Exception;
 use DB;
@@ -47,6 +48,97 @@ class PayPalService
 
         $data = json_decode($response->getBody(), true);
         return $data['access_token'];
+    }
+
+        /**
+    * Issue a Refund
+    * * @param string $captureId  The Transaction ID (e.g. 3C679...)
+    * @param float|null $amount Optional. If null, refunds FULL amount.
+    * @return array
+    */
+    public function refund($order, $amount = null)
+    {
+        $accessToken = $this->generateAccessToken();
+
+        $captureId = $order->transaction_id; //$captureId ?? $this->invoice->transaction_id;
+        $url = $this->payPalURL . "/v2/payments/captures/{$captureId}/refund";
+
+        // 1. Prepare Payload
+        $payload = [
+            'note_to_payer' => 'Refunding order per your request.'
+        ];
+
+        // If amount is provided, add it for Partial Refund
+        $amount = $order->total;
+        if ($amount !== null) {
+            $payload['amount'] = [
+                'value' => number_format($amount, 2, '.', ''),
+                'currency_code' => 'USD'
+            ];
+        }
+
+        $client = new Client(['verify' => false]);
+
+        try {
+            // 2. Send Request
+            $response = $client->post($url, [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Authorization' => "Bearer $accessToken"
+                ],
+                'json' => $payload
+            ]);
+
+            // 3. Parse Success Response
+            $data = json_decode($response->getBody(), true);
+
+            return [
+                'success' => true,
+                'refund_id' => $data['id'],
+                'status' => $data['status'], // usually 'COMPLETED'
+                'total_refunded' => $data['seller_payable_breakdown']['total_refunded_amount']['value'] ?? '0.00'
+            ];
+        } catch (ClientException $e) {
+            // 2. INTERCEPT THE ERROR
+            // This block runs only if PayPal returns 4xx (like your 422)
+
+            // Get the actual response body from PayPal (which contains the JSON)
+            $responseBody = $e->getResponse()->getBody()->getContents();
+            $errorJson = json_decode($responseBody, true);
+
+            // 3. Extract the friendly message
+            // PayPal usually puts the readable issue in 'details' or 'message'
+            $errorMessage = "Refund Failed: ";
+
+            if (isset($errorJson['details'][0]['issue'])) {
+                // Example: "CAPTURE_FULLY_REFUNDED"
+                $errorMessage .= $errorJson['details'][0]['description'];
+            } elseif (isset($errorJson['message'])) {
+                $errorMessage .= $errorJson['message'];
+            } else {
+                $errorMessage .= "Unknown error occurred.";
+            }
+
+            return [
+                'success' => false,
+                'error_name' => $errorJson['name'] ?? 'Unknown',
+                'error_message' => $errorMessage,
+                'details' => $errorJson['details'] ?? []
+            ]; // Stop execution here
+
+            // If using standard Controller:
+            // return back()->with('error', $errorMessage);
+        } catch (ClientException $e) {
+            // 4. Handle Error Response
+            $errorBody = json_decode($e->getResponse()->getBody(), true);
+
+            return [
+                'success' => false,
+                'error_name' => $errorBody['name'] ?? 'Unknown',
+                'error_message' => $errorBody['message'] ?? $e->getMessage(),
+                'details' => $errorBody['details'] ?? []
+            ];
+        }
     }
 
     private function handleResponse($response)
@@ -129,114 +221,4 @@ class PayPalService
         return $this->handleResponse($response);
     }
 
-    // --- Final Order Saving Logic (createOrderTemp) ---
-
-    /**
-     * Saves the final order details to the database (Estimate and related tables).
-     * Replaces the logic in CartController::createOrderTemp().
-     * * @param string $paymentMethod The payment method used (e.g., 'Credit Card', 'PayPal').
-     * @param array $requestData The full webhook/request data from PayPal or CC processor.
-     * @param array $customer The customer array stored in Livewire state.
-     * @return Estimate|null The created Estimate model instance.
-     */
-    public function saveFinalOrder(string $paymentMethod, array $requestData, array $customer): ?Estimate
-    {
-        $countries = new Countries; // Assuming this class exists
-
-        $country = $countries->getCountryBySortname($customer['card-billing-address-country-code']);
-
-        $totalWebprice = $this->cartService->calculateWebPrice();
-        $discountAmount = $this->cartService->getDiscountAmount();
-
-        // Ensure discount is applied to the final calculated subtotal
-        $totalWebpriceBeforeTax = $totalWebprice - $discountAmount;
-
-        $tax = 0;
-        $total = $totalWebpriceBeforeTax;
-        $company = $customer['b_company'] ?? ($customer['b_firstname'].' '.$customer['b_lastname']);
-
-        // Final Tax/Total calculation from original logic
-        if (isset($customer['b_state']) && $customer['b_state'] == 3956 && $country == 'United States') {
-            $tax = Taxable::where('state_id', $customer['b_state'])->value('tax') ?? 0;
-            $total = $totalWebpriceBeforeTax + ($totalWebpriceBeforeTax * ($tax / 100));
-        }
-
-        // Determine payment type from request data
-        $payment = $requestData['payment_source']['card']['brand'] ?? ($requestData['payment_source']['paypal']['account_status'] ?? $paymentMethod);
-
-        // Building order array (Replicated from original controller logic)
-        $orderArray = [
-            'b_firstname' => $customer['b_firstname'],
-            'b_lastname' => $customer['b_lastname'],
-            'b_company' => $company,
-            'b_address1' => $customer['b_address1'],
-            'b_address2' => $customer['b_address2'] ?? null,
-            'b_phone' => $customer['b_phone'],
-            'b_city' => $customer['b_city'],
-            'b_state' => $customer['b_state'],
-            'b_country' => $country,
-            'b_zip' => $customer['b_zip'],
-            's_firstname' => $customer['b_firstname'],
-            's_lastname' => $customer['b_lastname'],
-            's_company' => $company,
-            's_address1' => $customer['b_address1'],
-            's_address2' => $customer['b_address2'] ?? null,
-            's_phone' => $customer['b_phone'],
-            's_city' => $customer['b_city'],
-            's_state' => $customer['b_state'],
-            's_country' => $country,
-            's_zip' => $customer['b_zip'],
-            'payment_options' => $payment,
-            'method' => 'Invoice',
-            'transaction_id' => $requestData['id'] ?? null,
-            'email' => $customer['email'],
-            'discount' => $discountAmount,
-            'status' => 0,
-            'freight' => 0,
-            'taxable' => $tax,
-            'subtotal' => $totalWebpriceBeforeTax,
-            'total' => $total,
-        ];
-
-        // Building customer array for updateOrCreate
-        $new_customer = [
-            'cgroup' => 0,
-            'firstname' => $orderArray['b_firstname'],
-            'lastname' => $orderArray['b_lastname'],
-            'company' => $company,
-            'address1' => $orderArray['b_address1'],
-            'address2' => $orderArray['b_address2'],
-            'phone' => $orderArray['b_phone'],
-            'country' => $country,
-            'state' => $customer['b_state'],
-            'city' => $orderArray['b_city'],
-            'zip' => $orderArray['b_zip'],
-            'email' => $orderArray['email'] // Ensure email is passed for matching
-        ];
-
-        // 1. Save/Update Customer
-        $customerModel = Customer::updateOrCreate(['email' => $customer['email']], $new_customer);
-
-        // 2. Create Estimate (Order)
-        $order = Estimate::create($orderArray);
-        $order->customers()->attach($customerModel->id);
-
-        // 3. Save Products to estimate_product table
-        foreach (Cart::products() as $product) {
-            DB::table('estimate_product')->insert([
-                'estimate_id' => $order->id,
-                'p_model' => $product['p_model'],
-                'qty' => 1,
-                'price' => $product['price'],
-                'retail_price' => $product['price'],
-                'product_name' => $product['model_name'].' ('.$product['p_model'] .')'
-            ]);
-        }
-
-        Cart::clear(); // Clear the cart after order is saved
-        session()->put('order', $order->id); // Store order ID in session for alldone view
-        session()->forget('customer'); // Clear temporary customer session data
-
-        return $order;
-    }
 }

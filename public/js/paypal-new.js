@@ -73,60 +73,65 @@ if (cardField.isEligible()) {
   }
 
   // Add click listener to submit button and call the submit function on the CardField component
-  document.getElementById("paynow").addEventListener("click", (event) => {
-      event.preventDefault();
+ document.getElementById("paynow").addEventListener("click", async (event) => {
+    event.preventDefault();
 
-      const el = document.querySelector('#cart-component div[wire\\:id]');
-      const component = Livewire.find(el.getAttribute('wire:id'));
+    const el = document.querySelector('#cart-component div[wire\\:id]');
+    const component = Livewire.find(el.getAttribute('wire:id'));
 
-      // Call the Livewire method; returns JS object directly
-      const orderData = component.call('validateFields');
+    try {
+        // 1. Run Livewire Validation and CAPTURE the result
+        // If validation fails in PHP, this likely returns null/undefined, NOT true.
+        const isLivewireValid = await component.call('validateFields');
 
-      cardField.getState().then((data) => {
-        // Submit only if the current
-        // state of the form is valid
-        if (data.isFormValid) {
-          // document.getElementById('overlay').classList.add('flex');
-          // document.getElementById('overlay').classList.remove('hidden');
-          cardField.submit({
-
-            // From your billing address fields
-            billingAddress: {
-              addressLine1: document.getElementById("address1").value,
-              addressLine2: document.getElementById("address2").value,
-              countryCode: document.getElementById("bcountry").value,
-              postalCode: document.getElementById("zip").value,
-            },
-
-          })
-          .then(() => {
-            // submit successful
-
-          });
+        // 🛑 STOP HERE if Livewire validation failed
+        if (isLivewireValid !== true) {
+            console.log("Livewire validation failed (Customer Info missing)");
+            return; // Exit function. Do NOT show overlay.
         }
-    });
 
-  });
+        // 2. Check the Card Field State
+        const data = await cardField.getState();
+
+        // 3. ONLY Show Overlay if BOTH are valid
+        if (data.isFormValid) {
+
+            // ✅ NOW it is safe to show the overlay
+            document.getElementById('divoverlay').classList.remove('hidden');
+
+            await cardField.submit({
+                cardholderName: document.getElementById("firstname").value + " " + document.getElementById("lastname").value,
+                billingAddress: {
+                    addressLine1: document.getElementById("address1").value,
+                    addressLine2: document.getElementById("address2").value,
+                    countryCode: document.getElementById("bcountry").value,
+                    postalCode: document.getElementById("zip").value,
+                },
+            });
+
+        } else {
+            // Card details are invalid/missing
+            console.log("Card validation failed");
+        }
+
+    } catch (error) {
+        // This catches network errors or PayPal/Stripe SDK errors
+        console.error('System error:', error);
+
+        // Safety: Ensure overlay is hidden if we crash here
+        document.getElementById('divoverlay').classList.add('hidden');
+    }
+});
+
 
 }
 
-
+//4207 6702 5078 0056 11/30 096
 async function createOrderCallback() {
   resultMessage("");
   try {
-  //   const form = document.querySelector('form');
-  //   const formData = new FormData(form);
 
-  //   const response = await fetch("/payment/order", {
-  //     method: "POST",
-  //     headers: {
-  //         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-  //     },
-  //     body: formData,
-  //     redirect: 'follow',
-  // });
 
-  //   const orderData = await response.json();
     const el = document.querySelector('#cart-component div[wire\\:id]');
     const component = Livewire.find(el.getAttribute('wire:id'));
 
@@ -144,7 +149,6 @@ async function createOrderCallback() {
       throw new Error(errorMessage);
     }
   } catch (error) {
-    // console.error(error);
     resultMessage(`Could not initiate PayPal Checkout...<br><br>${error}`);
   }
 }
@@ -208,27 +212,6 @@ async function onApproveCallback(data, actions) {
       resultMessage(
         `Transaction ${transaction.status}: ${transaction.id}<br><br>See console for all available details`
       );
-      // actions.redirect()
-      // console.log(
-      //   "Capture result",
-      //   orderData,
-      //   JSON.stringify(orderData, null, 2)
-      // );
-
-      //window.location.replace('/payment/thankyou?status='+transaction.status+'&data='+JSON.stringify(orderData, null, 2));
-      // const requestOptions = {
-      //   method: 'POST',
-      //   headers: {
-      //     "Content-type": "application/json; charset=UTF-8",
-      //     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-      //   },
-      //   body: JSON.stringify(orderData), // Coloque o JSON no corpo da solicitação
-      //   redirect: 'follow'
-      // };
-
-      // const url = `/payment/thankyou`;
-
-      // const response = await fetch(url, requestOptions);
 
       const el = document.querySelector('#cart-component div[wire\\:id]');
       const component = Livewire.find(el.getAttribute('wire:id'));
@@ -236,6 +219,7 @@ async function onApproveCallback(data, actions) {
       // Call the Livewire method; returns JS object directly
       const order = await component.call('thankyou',orderData);
 
+      document.getElementById('divoverlay').classList.add('hidden');
       // document.getElementById('overlay').classList.remove('flex');
       // document.getElementById('overlay').classList.add('hidden');
       // document.location.href="/payment/alldone";

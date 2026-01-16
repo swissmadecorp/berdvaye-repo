@@ -19,6 +19,8 @@ use App\Models\Customer;
 use App\Models\DiscountRule;
 use App\Models\Cart;
 use GuzzleHttp\Client;
+use Carbon\Carbon;
+use App\Models\Country;
 //use App\Models\Mail\EmailConfirm;
 //use Illuminate\Support\Facades\Mail;
 use Omnipay\Common\Helper;
@@ -240,23 +242,40 @@ class CartController extends Controller
     public function Thankyou(Request $request) {
         // \Log::debug($request['payment_source']['card']['brand']);
         // return;
-        $customer= session()->get('customer');
-        $products = Cart::products();
+        // $customer= session()->get('customer');
+        // $products = Cart::products();
 
-        if ($customer['card-billing-address-country-code'] != 'US') {
-            $order = $this->createOrderTemp('Due upon receipt',$request);
-            $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
-            $printOrder->print($order,'email','cart'); // Print newly create proforma.
+        // if ($customer['card-billing-address-country-code'] != 'US') {
+        //     $order = $this->createOrderTemp('Due upon receipt',$request);
+        //     $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
+        //     $printOrder->print($order,'email','cart'); // Print newly create proforma.
 
-            session()->forget('customer');
-        } else {
-            $order = $this->createOrderTemp('Credit Card',$request);
-            if ($order) {
-                $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
-                $printOrder->print($order,'email'); // Print newly create proforma.
-                session()->forget('customer');
-            }
-        }
+        //     session()->forget('customer');
+        // } else {
+        //     $order = $this->createOrderTemp('Credit Card',$request);
+        //     if ($order) {
+        //         $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
+        //         $printOrder->print($order,'email'); // Print newly create proforma.
+        //         session()->forget('customer');
+        //     }
+        // }
+
+        $order = Estimate::find(327);
+
+        $data = array(
+            'to' => $order->email,
+            'customer_name' => $order->b_firstname . ' ' . $order->b_lastname,
+            'amount' => '$'.number_format($order->total,2),
+            'date' => Carbon::now()->format('F j, Y'),
+            'address1' => $order->b_address1 . ' ' . $order->b_address2,
+            'address2' => $order->b_city . ', ' . $order->b_state . ' ' . $order->b_zip,
+            'address3' => Country::find($order->b_country)->name,
+            'template' => 'emails.confirmation',
+            'subject' => 'Thank you for your order!',
+        );
+
+        $gmail = new GMailer($data);
+        $gmail->send();
     }
 
     public function Unsuccessful() {

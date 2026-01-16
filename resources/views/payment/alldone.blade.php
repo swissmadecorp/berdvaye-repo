@@ -31,7 +31,7 @@
       <div class="container clearfix">
         <ul>
           <li><img src="/images/product/hgs/thumb/thumb_01.jpg" alt="thumb_01"></li>
-          <li><img src="/images/product/product_05/thumb/thumb_02.jpg" alt="thumb_02"></li>
+          <li><img src="/images/product/frl/thumb/thumb_02.jpg" alt="thumb_02"></li>
           <li><img src="/images/product/cbl-ha/thumb/thumb_03.jpg" alt="thumb_03"></li>
         </ul>
       </div>
@@ -136,6 +136,7 @@
                         <tr style="border:1px solid #dee2e6">
                             <th class="w-[100px]">Image</th>
                             <th>Name</th>
+                            <th>Qty</th>
                             <th>Price</th>
                         </tr>
                         </thead>
@@ -164,18 +165,19 @@
                                         <p style="color: red">Item is on back order and will be shipped in 4 - 6 weeks.</p>
                                     @endif
                                 </td>
+                                <td class="align-middle text-center" style="width: 80px">{{ $product->qty }}</td>
                                 <td class="align-middle text-right" style="width: 150px">${{ number_format($product->retail_price,2) }}</td>
                             </tr>
-                            <?php $totals +=$product->retail_price ?>
+                            <?php $totals +=$product->retail_price * $product->qty ?>
                             @endforeach
                         </tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="2" class="text-right">Sub Total:</th>
+                                <th colspan="3" class="text-right">Sub Total:</th>
                                 <td style="border:1px solid #dee2e6" class="td-bk text-right w-25">${{ number_format($totals,2) }}</td>
                             </tr>
                             <tr class="tax-amount">
-                                <th colspan="2" class="text-right">Tax: </th>
+                                <th colspan="3" class="text-right">Tax: </th>
                                 @if (empty($tax))
                                 <td style="border:1px solid #dee2e6" class="td-bk text-right">$0.00</td>
                                 @else
@@ -183,11 +185,11 @@
                                 @endif
                             </tr>
                             <tr>
-                                <th colspan="2" class="text-right">Shipping: </th>
+                                <th colspan="3" class="text-right">Shipping: </th>
                                 <td style="border:1px solid #dee2e6" class="td-bk text-right">Free FedEx Ground</td>
                             </tr>
                             <tr>
-                                <th colspan="2" class="text-right">Grand Total:</th>
+                                <th colspan="3" class="text-right">Grand Total:</th>
                                 @if (empty($tax))
                                     <td style="border:1px solid #dee2e6" class="newtotal td-bk text-right">${{ number_format($totals,2) }}</td>
                                 @else

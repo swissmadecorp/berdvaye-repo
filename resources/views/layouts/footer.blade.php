@@ -48,7 +48,6 @@
                     <li class="dark:hover:text-cream text-gray-500 dark:text-white hover:text-darkcream"><a href="/">Horsephere</a></li>
                     <li class="dark:hover:text-cream text-gray-500 dark:text-white hover:text-darkcream"><a href="/">Lost in Time</a></li>
                     <li class="dark:hover:text-cream text-gray-500 dark:text-white hover:text-darkcream"><a href="/">Passage Through Time</a></li>
-                    <li class="dark:hover:text-cream text-gray-500 dark:text-white hover:text-darkcream"><a href="/">Time Framed</a></li>
                     <li class="dark:hover:text-cream text-gray-500 dark:text-white hover:text-darkcream"><a href="/">Time Squared</a></li>
                 </ul>
             </div>

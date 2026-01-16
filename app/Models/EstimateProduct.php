@@ -21,6 +21,6 @@ class EstimateProduct extends Model
     }
 
     public function image() {
-        return $this->retail ? $this->retail->image_location : '';
+        return $this->retail ? "/images/gallery/thumbnail/". strtolower($this->retail->p_model) .'_thumb.jpg' : '';
     }
 }

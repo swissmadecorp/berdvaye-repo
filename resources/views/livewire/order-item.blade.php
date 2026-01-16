@@ -51,8 +51,17 @@
 
                 <div wire:ignore.self x-data="{flex: 1}" class="p-4 rounded-lg dark:bg-gray-800" id="customer-info" role="tabpanel" aria-labelledby="customer-info-tab">
                     <form>
-                        <x-input-standard model="customer.created_at" label="created_at" text="Order Date" validation/>
-
+                        <div class="grid md:gap-16 mb-6 md:grid-cols-2 p-3 pb-5 bg-gray-100 rounded-lg dark:bg-gray-600">
+                            <x-input-standard model="customer.created_at" label="created_at" text="Order Date" validation/>
+                            <div>
+                                <label for="cgroup" class="block text-sm font-medium text-gray-900 dark:text-white">Customer Group</label>
+                                <select id="cgroup" wire:model.live="customerGroupId" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                    @foreach($this->customerGroup as $index => $group)
+                                        <option value="{{ $index }}">{{ $group }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
 
                         <div class="grid gap-6 mb-2 mt-4 md:grid-cols-2">
                             <x-input-standard model="customer.po" label="po" text="PO Number" class="uppercase"/>

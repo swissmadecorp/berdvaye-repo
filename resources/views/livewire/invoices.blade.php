@@ -128,8 +128,6 @@ if ($event.key === '=') {
                 <li class="menu-item cursor-pointer block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white email">Email Invoice</li>
                 <li class="menu-item cursor-pointer block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white commercial">Print Commercial</li>
 
-                <li class="menu-item cursor-pointer block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white appraisal">Print Appraisal</li>
-
                 <li class="menu-item cursor-pointer block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white printstatement">Print Statement</li>
 
                 @role('superadmin|administrator')
@@ -167,7 +165,10 @@ if ($event.key === '=') {
                     $counter ++ ;$incomplete = '';
                     // $id = "prod-".$order->id;
                     // dd($id);
-                    $custId = $order->customers->first()->id;
+                    $custId = 0;
+                    if ($order->customers->first())
+                        $custId = $order->customers->first()->id;
+
                     if ($order->code)
                         $cc_status = $order->cc_status;
                     else $status = orderStatus()->get($order->status);
@@ -181,6 +182,7 @@ if ($event.key === '=') {
                     $total -= $subtotal;
                     $companyInfo = (!$order->b_firstname && !$order->b_lastname && $order->s_firstname && $order->s_lastname) ? '<b>'.$order->b_company . '</b>-'.$order->s_firstname . ' ' .$order->s_lastname .'*': $order->b_company;
                     $id = $order->id;
+
                     $po = $order->po;
                     // dd($order->id);
                     if ($po)
@@ -197,7 +199,7 @@ if ($event.key === '=') {
 
                 ?>
                 <tr :class="status == 0 ? 'odd:bg-red-100 even:bg-red-50 hover:bg-red-200 even:bg-red-50' : 'odd:bg-gray-100 hover:bg-gray-200 even:bg-gray-50'"
-                    wire:key="{{$order->id}}"
+                    wire:key="{{$id}}"
                     class="odd:dark:bg-gray-900 dark:text-gray-200 even:dark:bg-gray-800 border-b dark:border-gray-700">
 
                     <td class="px-3 py-2">
@@ -211,7 +213,7 @@ if ($event.key === '=') {
 
                     </td>
                     <td class="px-3 py-2">
-                        <a href="#" @click="isSliderVisible = !isSliderVisible" wire:click.prevent="loadInvoice({{$id}})" data-id="{{$id}}" class="editinvoice cursor-pointer dark:hover:text-white text-sky-600">{{$order->id}}</a>
+                        <a href="#" @click="isSliderVisible = !isSliderVisible" wire:click.prevent="loadInvoice({{$id}})" data-id="{{$id}}" class="editinvoice cursor-pointer dark:hover:text-white text-sky-600">{{$id}}</a>
 
                     </td>
                     <td class="px-3 py-2">{!! $method.$shipped !!}</td>
@@ -257,83 +259,59 @@ if ($event.key === '=') {
         }).on('mouseleave', 'span.hide', function () {
             $(this).css('opacity',0)
         })
+    })
+    </script>
+@endscript
 
+@push ('jquery')
+<script>
+    $(document).ready( function() {
         $(document).on("click", "#alert-border-1 button", function() {
             $(this).parent().slideUp("slow");;
         })
 
-        $(document).on("click", ".menu-btn", function (e) {
-            e.stopPropagation(); // Prevent closing when clicking the button
+        $('.menu-btn').popupMenu({
+            menuSelector: "#popup-menu",
+            selectors: {
+                menuItem: ".menu-item"
+            },
 
-            let menu = $("#popup-menu");
-            let button = $(this);
-            let id = button.data("id"); // Get product ID from button
-            let custId = button.attr("data-custid"); // Get product ID from button
-            let status = button.data("status"); // Get product ID from button
+            // onMenuOpen now receives the full data object!
+            onMenuOpen: (data, menu) => {
+                debugger
+                // The 'data' object contains all attributes from the button,
+                // e.g., data.id, data.invoiceid, data.sku, etc.
 
-            menu.find(".menu-item").attr("data-id", id);
-            menu.find("li.print").attr("onclick", `window.open('/admin/orders/${id}/print', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
-            menu.find("li.printstatement").attr("onclick", `window.open('/admin/orders/${custId}/${status}/printstatement', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
-            menu.find("li.packingslip").attr("onclick", `window.open('/admin/orders/${id}/print/packingslip', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
-            menu.find("li.appraisal").attr("onclick", `window.open('/admin/orders/${id}/print/appraisal', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
-            menu.find("li.commercial").attr("onclick", `window.open('/admin/orders/${id}/print/commercial', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
+                // Example Button HTML: <button data-orderid="123" data-customername="Jane" data-lineindex="5" ...>
+                const id = data.id;
+                const custId = data.custid;
+                const status = data.status;
 
-            menu.find("li.email").attr("wire:click.prevent", `sendEmail(${id})`);
-            menu.find("li.textinvoice").attr("wire:click.prevent", `setCurrentInvoiceId(${id})`);
-            menu.find("li.returnall").attr({
-                "wire:click.prevent": `returnAllProducts(${id})`,
-                "wire:confirm": `You're about to return all the products for the invoice/memo # ${id}. Are you sure you want to do that?`
-            });
+                // Your logic is now entirely custom:
+                const openWindow = (url) => `window.open('${url}', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`;
 
-            menu.find("li.deleteinvoice").attr({
-                "wire:click.prevent": `deleteInvoice(${id})`,
-                "wire:confirm": `This action will completely delete invoice #${id}. Are you sure you want to do this?`
-            });
+                menu.find(".menu-item").attr("data-id", id);
+                menu.find("li.print").attr("onclick", `window.open('/admin/orders/${id}/print', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
+                menu.find("li.printstatement").attr("onclick", `window.open('/admin/orders/${custId}/${status}/printstatement', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
+                menu.find("li.packingslip").attr("onclick", `window.open('/admin/orders/${id}/print/packingslip', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
+                menu.find("li.appraisal").attr("onclick", `window.open('/admin/orders/${id}/print/appraisal', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
+                menu.find("li.commercial").attr("onclick", `window.open('/admin/orders/${id}/print/commercial', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
 
-            // menu.find("li.editinvoice").attr("wire:click.prevent", `makeInvoice(${productId})`);
-            // menu.find("li.deleteitem").attr("wire:click", `deleteProduct(${productId})`);
+                menu.find("li.email").attr("wire:click.prevent", `sendEmail(${id})`);
+                menu.find("li.textinvoice").attr("wire:click.prevent", `setCurrentInvoiceId(${id})`);
+                menu.find("li.returnall").attr({
+                    "wire:click.prevent": `returnAllProducts(${id})`,
+                    "wire:confirm": `You're about to return all the products for the invoice/memo # ${id}. Are you sure you want to do that?`
+                });
 
-            let buttonPosition = button.position(); // Relative position
-            let buttonHeight = button.outerHeight();
-            let menuHeight = menu.outerHeight();
-            let container = button.closest("table").parent(); // Find the nearest scrolling container
-            let containerScrollTop = container.scrollTop(); // Get the scroll position
-            let containerHeight = container.height(); // Get the height of the scrollable area
-
-            let spaceBelow = containerHeight - (buttonPosition.top + buttonHeight);
-            let spaceAbove = buttonPosition.top;
-
-            let topPosition;
-
-            // Show above the button if there's not enough space below
-            if (spaceBelow >= menuHeight || spaceBelow > spaceAbove) {
-                topPosition = buttonPosition.top + buttonHeight + 5 + containerScrollTop;
-            } else {
-                topPosition = buttonPosition.top - menuHeight - 5 + containerScrollTop;
-            }
-
-            // If clicking the same button, toggle menu visibility
-            if (menu.is(":visible") && menu.data("active-button") === button[0]) {
-                menu.addClass("hidden").removeData("active-button");
-            } else {
-                menu.css({
-                    top: topPosition + "px",
-                    left: buttonPosition.left + "px",
-                }).removeClass("hidden").data("active-button", button[0]);
+                menu.find("li.deleteinvoice").attr({
+                    "wire:click.prevent": `deleteInvoice(${id})`,
+                    "wire:confirm": `This action will completely delete invoice #${id}. Are you sure you want to do this?`
+                });
             }
         });
-
-        // Hide menu when clicking anywhere outside
-        $(document).on("click", function () {
-            $("#popup-menu").addClass("hidden").removeData("active-button");
-        });
-
-        // Prevent menu from closing when clicking inside it
-        $("#popup-menu").on("click", function (e) {
-            e.stopPropagation();
-        });
-        })
+    })
     </script>
-@endscript
+@endpush
 
 </div>

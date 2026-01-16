@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="description" content="">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -215,6 +216,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
     <script src="/js/customers/jquery.customer.js"></script>
     <script src="/js/general.js"></script>
+    <script src="/js/popupMenu.jquery.js"></script>
     <script src="/js/jquery-confirm/jquery-confirm.min.js"></script>
     @stack('footer')
     @stack('jquery')

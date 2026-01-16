@@ -10,6 +10,7 @@ use Livewire\Attributes\Js;
 use Livewire\Attributes\Url;
 use Livewire\Attributes\Rule;
 use Livewire\WithPagination;
+use App\Services\PayPalService;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Jantinnerezo\LivewireAlert\Enums\Position;
 
@@ -146,6 +147,35 @@ class Orders extends Component
         $estimate->delete();
 
         LivewireAlert::title('Successfully deleted invoice!')->success()->position(Position::TopEnd)->toast()->show();
+    }
+
+    public function refundInvoice($id) {
+        $paypal =  app(PayPalService::class);
+
+        $order = Estimate::find($id);
+
+        if ($order->transaction_id) {
+            $response = $paypal->refund($order);
+
+            if ($response['success']) {
+                LivewireAlert::title('Successfully refunded the customer!')->success()->position(Position::TopEnd)->toast()->show();
+            } else {
+                $errorMessage = $response['error_message'] ?? 'An error occurred during the refund process.';
+                LivewireAlert::title('Refund Failed')
+                    ->withConfirmButton('Ok')
+                    ->error()
+                    ->text($errorMessage)
+                    ->asInfo()
+                    ->show();
+            }
+        } else {
+            LivewireAlert::title('Refund Failed')
+                ->withConfirmButton('Ok')
+                ->error()
+                ->text('No PayPal transaction ID found for this order.')
+                ->asInfo()
+                ->show();
+        }
     }
 
     public function deleteInvoice($id) {

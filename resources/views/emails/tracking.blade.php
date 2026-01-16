@@ -1,9 +1,9 @@
 <html>
 <head></head>
   <body>
-    
-    FedEx tracking # for {{$company}}, order number {{$order_id}} is: 
-    <br><a href="{{$tracking}}">{{$tracking}}</a>  
+
+    FedEx tracking # for {{$company}}, order number {{$order_id}} is:
+    <br><a href="https://www.fedex.com/fedextrack/?trknbr={{$tracking}}">{{$tracking}}</a>
 
     <p>Thank you,</p>
 
@@ -13,6 +13,6 @@
     Tel: 833-BERDVAYE (237-3829)<br>
     info@berdvaye.com<br>
     www.berdvaye.com
-  
+
   </body>
 </html>

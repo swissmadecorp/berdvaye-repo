@@ -149,6 +149,7 @@ src="https://www.facebook.com/tr?id=2264134867419924&ev=PageView&noscript=1"
               <ul>
                 <li><a href="/about" class="text-gray-300 hover:text-red-300">Our Story</a></li>
                 <li><a href="/about#authenticity" class="text-gray-300 hover:text-red-300">Authenticity</a></li>
+                <li><a href="/terms-and-conditions" class="text-gray-300 hover:text-red-600">Terms & Conditions</a></li>
               </ul>
               <h3 class="mt-2"><a href="/contact" class="text-gray-300 hover:text-red-300">Contact Us</a></h3>
             </div>
@@ -169,7 +170,7 @@ src="https://www.facebook.com/tr?id=2264134867419924&ev=PageView&noscript=1"
                   <img src="/images/contact/facebook-2870.svg" class="w-5 h-5" alt="Facebook">
                 </a>
                 <a href="https://www.instagram.com/berdvaye/" target="_blank" class="flex items-center gap-1 text-gray-300">
-                  <img src="/images/contact/instagram-logo-8869.svg" class="w-5 h-5" alt="Instagram">@berdvaye
+                  <img src="/images/contact/instagram-logo-8869.svg" class="w-5 h-5" alt="Instagram">berdvaye
                 </a>
               </div>
 
@@ -181,7 +182,6 @@ src="https://www.facebook.com/tr?id=2264134867419924&ev=PageView&noscript=1"
 
               <!-- Right: Email -->
               <div class="flex items-center gap-2 justify-center sm:justify-end">
-                <img src="/images/contact/at_sign.svg" class="w-5 h-5" alt="Email">
                 <a href="mailto:info@berdvaye.com" class="text-gray-300">info@berdvaye.com</a>
               </div>
 
@@ -193,7 +193,7 @@ src="https://www.facebook.com/tr?id=2264134867419924&ev=PageView&noscript=1"
   <footer>
     <div class="container-fluid">
       <div class="row">
-        <div class="col-md-4 col-12"><small>&copy;copyright Berd Vay’e 2019</small></div>
+        <div class="col-md-4 col-12"><small>&copy;copyright Berd Vay’e 2019 - {{ date('Y') }}</small></div>
         <div class="col-md-4 col-12">
           <div class="text-uppercase text-center"><a href="/terms-and-conditions">Terms & Conditions</a> | <a href="privacy-policy">Privacy Policy</a></div>
         </div>

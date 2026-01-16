@@ -128,10 +128,13 @@ class GMailer
             }
         }
 
-
         // Recipients
-        $mail->setFrom(config('gmailer.mail_from'), "Customer Support");
-        $mail->addReplyTo(config('gmailer.mail_from'), "Customer Support");
+        if (isset($this->event['from']))
+            $from = $this->event['from'];
+        else $from = 'Berdvaye';
+
+        $mail->setFrom(config('gmailer.mail_from'), $from);
+        $mail->addReplyTo(config('gmailer.mail_from'), $from);
 
         if (isset($this->event['fullname']))
             $fullname=$this->event['fullname'];

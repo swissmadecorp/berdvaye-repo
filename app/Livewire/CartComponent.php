@@ -10,7 +10,9 @@ use Illuminate\Http\Request;
 use Livewire\Attributes\On;
 use App\Models\DiscountRule;
 use App\Models\Taxable;
+use Illuminate\Support\Str;
 use GuzzleHttp\Client;
+use App\Mail\GMailer;
 use App\Services\CartService;
 use Livewire\Attributes\Computed;
 use App\Models\Cart;
@@ -18,6 +20,8 @@ use App\Models\Product;
 use App\Models\Country;
 use App\Models\State;
 use Carbon\Carbon;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use Jantinnerezo\LivewireAlert\Enums\Position;
 
 class CartComponent extends Component
 {
@@ -102,6 +106,18 @@ class CartComponent extends Component
 
     public function updated($propertyName) {
         if ($propertyName == 'selectedBCountry') {
+
+            if ($this->selectedBCountry != 231) {
+                // LivewireAlert::title('Shipping Restriction')
+                //     ->withConfirmButton('Ok')
+                //     ->error()
+                //     ->text('We are currently only able to ship within the United States. Please contact us for international orders.')
+                //     ->asInfo()
+                //     ->show();
+                $this->selectedBCountry = 231;
+                $this->dispatch('swalInput', ['For orders outside of the United States, please contact us directly at <a href="mailto:info@berdvaye.com">info@berdvaye.com</a>.']);
+
+            }
             $this->selectedBState = null;
         } elseif ($propertyName == 'selectedBState') {
             $this->selectedBState = $this->selectedBState;
@@ -110,16 +126,19 @@ class CartComponent extends Component
     }
 
     public function startPaymentProcess() {
-        $this->processing = true;
+        // $this->processing = true;
     }
 
     public function validateFields() {
         $validatedData = $this->validate();
+        return true;
     }
 
     public function order() {
 
         $this->validateFields();
+        // $this->dispatch('disable-form-fields');
+
         $cart = [];
         foreach (Cart::products() as $product) {
             $cart[] = [
@@ -148,10 +167,25 @@ class CartComponent extends Component
         // Disabling certificate validation for local development
         $client = new Client(['verify' => false]);
         $webprice = 0;
-        // \Log::debug(Cart::products());
+        $items = [];
+        $calculated_item_total = 0;
+
+        // 1. Build Items and Calculate Item Total
         foreach (Cart::products() as $products) {
-            $webprice+=$products['price']*$products['qty'];
-            $items[] = ['name' => $products['model_name'],'quantity' => $products['qty'], 'sku' => $products['p_model']];
+            $unit_price = number_format($products['price'], 2, '.', '');
+            $line_total = $unit_price * $products['qty'];
+            $calculated_item_total += $line_total;
+
+            $items[] = [
+                'sku' => $products['p_model'],
+                'image_url' => url($products['image']),
+                'name' => substr($products['model_name'], 0, 127),
+                'quantity' => (string)$products['qty'],
+                'unit_amount' => [
+                    'currency_code' => 'USD',
+                    'value' => $unit_price
+                ]
+            ];
         }
 
         $customer = $this->customer;
@@ -162,25 +196,58 @@ class CartComponent extends Component
 
         $this->customer['card-billing-address-country-code'] = $country_b;
 
-        $tax = 0;$total = 0;
+        // 2. Calculate Tax Amount (in Dollars)
+        // We use your logic here to determine the rate, but apply it to the $calculated_item_total
+        $tax_rate = 0;
         if ($this->selectedBState == 3956 && $customer['card-billing-address-country-code'] == 'US') {
-            $tax = Taxable::where('state_id',$this->selectedBState)->value('tax');
-            $total = $webprice + ($webprice * ($tax/100));
-        } else
-            $total = $webprice;
+            // Get the rate (e.g., 7.0 for 7%)
+            $tax_rate = Taxable::where('state_id', $this->selectedBState)->value('tax');
+        }
+
+        // Calculate the actual tax money value
+        // We round this to 2 decimal places immediately to match PayPal's math
+        $tax_amount = 0;
+        if ($tax_rate > 0) {
+            $tax_amount = round($calculated_item_total * ($tax_rate / 100), 2);
+        }
+
+        // 3. Final Total
+        // PayPal requires: Item Total + Tax Total = Final Value
+        $final_total = $calculated_item_total + $tax_amount;
 
         $payload = [
             'intent' => 'CAPTURE',
             'purchase_units' => [
                 [
+                    'reference_id' => Str::uuid()->toString(),
+                    'invoice_id' => Str::uuid()->toString(),
                     'amount' => [
                         'currency_code' => 'USD',
-                        'value' => number_format($total,2, '.', '')
-                    ]
+                        'value' => number_format($final_total, 2, '.', ''), // The Grand Total
+                        'breakdown' => [
+                            'item_total' => [
+                                'currency_code' => 'USD',
+                                'value' => number_format($calculated_item_total, 2, '.', '')
+                            ],
+                            'tax_total' => [ // <--- Specifically for Tax
+                                'currency_code' => 'USD',
+                                'value' => number_format($tax_amount, 2, '.', '')
+                            ]
+                        ]
+                    ],
+                    'items' => $items
                 ]
             ],
-            'items' => $items
+            "payer" => [
+                    "name" => [
+                        "given_name" => $customer['firstname'], // e.g. "John"
+                        "surname" => $customer['lastname']      // e.g. "Doe"
+                    ],
+                    "email_address" => $customer['email']       // Optional but recommended
+                ]
         ];
+
+        // \Log::debug(json_encode($payload));
 
         $response = $client->post($this->payPalURL."/v2/checkout/orders", [
             'headers' => [
@@ -190,6 +257,7 @@ class CartComponent extends Component
             'json' => $payload
         ]);
 
+        \Log::debug('createOrder:'.$response->getBody()->getContents());
         return $this->handleResponse($response);
     }
 
@@ -202,31 +270,65 @@ class CartComponent extends Component
     }
 
     public function thankyou(Request $request) {
-        $products = Cart::products();
+        // $products = Cart::products();
 
-        if ($this->customer['card-billing-address-country-code'] != 'US') {
-            $order = $this->processOrder('Due upon receipt',$request);
-            $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
-            $printOrder->print($order,'email','cart'); // Print newly create proforma.
-        } else {
-            $order = $this->processOrder('Credit Card',$request);
-            if ($order) {
-                $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
-                $printOrder->print($order,'email'); // Print newly create proforma.
-            }
-        }
+        // if ($this->customer['card-billing-address-country-code'] != 'US') {
+        //     $order = $this->processOrder();
+        // } else {
+        // }
 
-        $this->processing = false;
+        $order = $this->processOrder();
+        $countries = new \App\Libs\Countries;
+        $state = $countries->getStateCodeFromCountry($order->b_state);
+
+        $data = array(
+            'to' => $order->email,
+            'customer_name' => $order->b_firstname . ' ' . $order->b_lastname,
+            'amount' => '$'.number_format($order->total,2),
+            'date' => Carbon::now()->format('F j, Y'),
+            'address1' => $order->b_address1 . ' ' . $order->b_address2,
+            'address2' => $order->b_city . ', ' . $state . ' ' . $order->b_zip,
+            'address3' => Country::find($order->b_country)->name,
+            'template' => 'emails.confirmation',
+            'subject' => 'Thank you for your order!',
+        );
+
+        $gmail = new GMailer($data);
+        $gmail->send();
+
         return redirect()->route('all.done');
+    }
+
+    private function captureOrder($orderID) {
+        $accessToken = $this->generateAccessToken();
+
+        // Disabling certificate validation for local development
+        $client = new Client(['verify' => false]);
+        $response = $client->post($this->payPalURL."/v2/checkout/orders/$orderID/capture", [
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Authorization' => "Bearer $accessToken"
+            ]
+        ]);
+
+        $data = json_decode($response->getBody()->getContents(),true);
+
+        \Log::debug('captureOrder:'.print_r($data,true));
+        $this->extractPaypalOrderData($data);
+
+        return $this->handleResponse($response);
     }
 
     public function extractPaypalOrderData($data) {
         $result = [];
 
+        \Log::debug('extractPaypalOrderData:'.print_r($data,true));
         $this->customer['account_status'] = $data['payment_source']['paypal']['account_status'] ?? null;
         if (!empty($data['payment_source']) && is_array($data['payment_source'])) {
             $this->customer['payment_source'] = array_key_first($data['payment_source']);
         }
+
+        $this->customer['transaction_id'] = $data['purchase_units'][0]['payments']['captures'][0]['id'] ?? null;
 
         $this->customer['country'] = $this->selectedBCountry;
         $this->customer['state'] = $this->selectedBState;
@@ -253,17 +355,28 @@ class CartComponent extends Component
 
             $this->customer['currency'] = $data['purchase_units'][0]['payments']['captures'][0]
                 ['seller_receivable_breakdown']['gross_amount']['currency_code'] ?? null;
+
         }
+
+        \Log::debug(print_r($this->customer,true));
     }
 
-    private function processOrder($method, $data) {
+    private function processOrder() {
         // \Log::debug(print_r(Cart::products(),true));
+        // return;
         $countries = new \App\Libs\Countries;
 
         $customer= $this->customer;
 
-        $country = $countries->getCountryIdBySortname($customer['country']);
-        $state = $countries->getStateByCode($customer['state']);
+        \Log::debug('Country: '.$customer['country']);
+
+        if (is_numeric($customer['country']))
+            $country = $customer['country'];
+        else $country = $countries->getCountryIdBySortname($customer['country']);
+
+        if (is_numeric($customer['state']))
+            $state = $customer['state'];
+        else $state = $countries->getStateIdByName($customer['state']);
 
         $tax = 0;$subtotal = 0;$total = 0;$orderstatus = 0;$totalWebprice=0;
 
@@ -307,15 +420,16 @@ class CartComponent extends Component
             's_country' => $country,
             's_zip' => $customer['zip'],
             'payment_options' => $payment,
+            'emailed_tracking' => 0,
             'method' => 'Invoice',
-            // 'transaction_id' => $request['id'],
+            'transaction_id' => $customer['transaction_id'],
             'email' => $customer['email'],
             'discount' => $discount['amount'],
             'status' => 0
         ];
 
         $new_customer = array(
-            'cgroup' => 0,
+            'cgroup' => 1,
             'firstname' => $customer['firstname'],
             'lastname' => $customer['lastname'],
             'company' => $company,
@@ -399,22 +513,6 @@ class CartComponent extends Component
         }
     }
 
-    private function captureOrder($orderID) {
-        $accessToken = $this->generateAccessToken();
-
-        // Disabling certificate validation for local development
-        $client = new Client(['verify' => false]);
-        $response = $client->post($this->payPalURL."/v2/checkout/orders/$orderID/capture", [
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Authorization' => "Bearer $accessToken"
-            ]
-        ]);
-
-        $this->extractPaypalOrderData(json_decode($response->getBody()->getContents(),true));
-        return $this->handleResponse($response);
-    }
-
     private function generateAccessToken() {
         $PAYPAL_CLIENT_ID = config('paypal.live.client_id');
         $PAYPAL_CLIENT_SECRET = config('paypal.live.client_secret');
@@ -435,7 +533,6 @@ class CartComponent extends Component
                 'Authorization' => "Basic $auth"
             ]
         ]);
-
 
         $data = json_decode($response->getBody(), true);
         return $data['access_token'];

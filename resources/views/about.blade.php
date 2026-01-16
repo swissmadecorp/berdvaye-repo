@@ -52,12 +52,12 @@
         </div>
       </div>
     </div>
-    <div class="productBanner pb-5 animateRun" data-vp-add-class="visible" data-vp-repeat="false" data-vp-offset="12%">
+    <div class="productBanner pb-2 pt-3 animateRun" data-vp-add-class="visible" data-vp-repeat="false" data-vp-offset="12%">
       <div class="container clearfix">
         <div id="productBanner" class="owl-carousel owl-theme ownCarousel">
           <div class="item">
             <div class="productBanner-Box"> <img class="owl-lazy" data-src="images/about/banners/banner_01.jpg" alt="banner_01"/> </div>
-            <small class="font-italic d-block text-dark pt-1 pl-1 pr-1 text-center">"Family heirloom provides inspiration for the first Berd Vay’e designs. It sits nearby on the designer’s desk as a symbol of a long term respect for the history of timekeeping."</small> </div>
+            <small class="font-italic d-block pt-1 pl-1 pr-1 text-center text-gray-300">"Family heirloom provides inspiration for the first Berd Vay’e designs. It sits nearby on the designer’s desk as a symbol of a long term respect for the history of timekeeping."</small> </div>
         </div>
       </div>
     </div>

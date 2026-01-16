@@ -1,10 +1,14 @@
 <?php $totals=0; ?>
 <div>
+    @push ('jquery')
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @endpush
+
     <div wire:ignore.self id="slideover-product-container" class="fixed inset-0 w-full h-full invisible z-60" >
         <div wire:ignore.self id="slideover-product-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
         <div @keydown.escape.prevent="closeAndClearProductFields()" wire:ignore.self id="slideover-product" class="absolute duration-500 ease-out transition-all h-full bg-white right-0 top-0 translate-x-full overflow-x-hidden overflow-y-scroll xm:w-[54rem] w-[305px]">
 
-            <div wire:loading.flex wire:target="startPaymentProcess" class="absolute h-full w-full flex items-center justify-center z-101 bg-black/80" >
+            <div wire:ignore.self id="divoverlay" class="absolute h-full w-full flex items-center justify-center z-101 bg-black/80 hidden" >
                 <div class="text-white text-lg flex items-center space-x-2">
                     <svg class="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -215,17 +219,6 @@
                                 </tr>
                             </table>
 
-                            <div class="p-2 mt-8">
-                                <label for="promocode" class="block mb-2 font-bold text-gray-500 text-lg">Promocode</label>
-                                <div class="border border-[#e5b384] flex justify-between">
-                                    <input type="text" id="promocode" placeholder="Enter Promo Code" class="bg-gray-50 border-0 focus:ring-0 outline-hidden p-2.5 text-gray-900 text-sm w-full" />
-                                    <button class="bg-gray-800 text-white p-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
 
                             <div class="p-2 xm:mt-32 flex justify-between font-bold text-lg text-gray-500">
                                 <span>Total</span>
@@ -234,7 +227,7 @@
 
                             <div class="pl-1 xm:pr-0">
                                 <button wire:ignore.self type="button" id="checkout" wire:click.prevent="goToNextStep" class="cursor-pointer w-full transition-colors duration-300 ease-in-out px-6 py-2 text-sm bg-darkred dark:text-cream rounded-full hover:bg-red-700">Checkout</button>
-                                <button wire:ignore.self type="button" id="paynow" wire:click="startPaymentProcess"
+                                <button wire:ignore.self type="button" id="paynow" wire:attrbibutes="disabled"
                                     class="cursor-pointer w-full transition-colors duration-300 ease-in-out px-6 py-2 text-sm bg-darkred dark:text-cream rounded-full hover:bg-red-700 hidden">
                                         Pay
                                 </button>
@@ -383,6 +376,10 @@
             //     $('#paypal-container').removeClass('hidden');
             // });
 
+            $wire.on('disable-form-fields', msg => {
+                document.getElementById('divoverlay').classList.remove('hidden');
+            });
+
             $wire.on('dispatched-message', msg => {
                 if (msg[0].msg === 'deleteproduct' && $wire.$get('countCart') === 0) {
                     $wire.$dispatch('clear-form');
@@ -391,6 +388,14 @@
                 if (msg[0].msg === 'addtocart' && $wire.$get('countCart') > 0) {
                     Slider();
                 }
+            });
+
+            $wire.on('swalInput', msg => {
+                Swal.fire({
+                    title: msg,
+                    toast: true,
+                    confirmButtonText: 'Ok',
+                })
             });
 
             $(document).on('click', '.total-cart-pro', function () {

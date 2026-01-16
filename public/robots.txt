@@ -1,2 +1,10 @@
 User-agent: *
-Disallow:
+
+# Block admin / app areas
+Disallow: /admin/
+Disallow: /app/
+Disallow: /storage/
+Disallow: /vendor/
+Disallow: /.env
+
+Sitemap: https://berdvaye.com/sitemap.xml

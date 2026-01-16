@@ -136,6 +136,25 @@ class Countries
 
     }
 
+    public function getStateNameById($id) {
+        $state = State::find($id);
+
+        if ($state)
+            return $state->name;
+
+        return '';
+
+    }
+    public function getStateIdByName($name) {
+        $state = State::where('name', $name)->first();
+
+        if ($state->name)
+            return $state->id;
+
+        return '';
+
+    }
+
     public function getStateByCode($code) {
         if (!$code) return '';
 

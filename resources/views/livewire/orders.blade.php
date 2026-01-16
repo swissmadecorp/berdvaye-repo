@@ -1,4 +1,4 @@
-<div x-data="{ focusSearchBox() { $refs.searchbox.focus(); $refs.searchbox.select(); } }" 
+<div x-data="{ focusSearchBox() { $refs.searchbox.focus(); $refs.searchbox.select(); } }"
 x-init="focusSearchBox()"
 @keydown.window="if ($event.key === '/') { $event.preventDefault(); focusSearchBox(); }">
     {{-- The whole world belongs to you. --}}
@@ -27,9 +27,9 @@ x-init="focusSearchBox()"
         </div>
     </div>
 
-    <livewire:payments :$order/> 
+    <livewire:payments :$order/>
     <livewire:product-item />
-    
+
     @if (session()->has('message'))
         <div id="alert-border-1" class="flex items-center p-4 mb-4 text-blue-800 border-t-4 border-blue-300 bg-blue-50 dark:text-blue-400 dark:bg-gray-800 dark:border-blue-800 transition-all duration-500 animate-bounce" role="alert">
             <svg class="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
@@ -63,6 +63,19 @@ x-init="focusSearchBox()"
     @endif
 
     <livewire:order-item />
+
+    <!-- Popup Menu (Hidden Initially) -->
+    <div id="popup-menu" class="hidden z-50 absolute bg-gray-200 dark:bg-gray-800 shadow-lg rounded-lg border border border-gray-300">
+        <ul class="divide-gray-300">
+            <li class="menu-item cursor-pointer block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white print">Print Order</li>
+            <li class="menu-item cursor-pointer block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white refund">Refund</li>
+
+            @role('superadmin|administrator')
+            <li class="menu-item border-t border-gray-300 cursor-pointer block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white deleteinvoice">Delete Invoice/Order</li>
+            @endrole
+        </ul>
+    </div>
+
     <div class="relative sm:rounded-lg">
         <div class="flex items-center justify-between flex-column md:flex-row flex-wrap space-y-4 md:space-y-0 py-4 bg-white dark:bg-gray-900  md:p-4">
             <!-- <form action="orders/create"> -->
@@ -77,9 +90,9 @@ x-init="focusSearchBox()"
                 <input type="text" x-ref="searchbox" wire:model.live.debounce.150ms="search" id="table-search" class="block h-10 ps-10 text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search for items">
             </div>
         </div>
-            
+
         <table x-data = "{status: @entangle('status'), darkMode: true}" class="w-full text-sm text-left rtl:text-right dark:text-white-400">
-            <thead 
+            <thead
                 :class="status == 0 ? 'bg-red-300' : 'bg-gray-50'"
                 class="text-xs text-gray-700 uppercase dark:bg-gray-700 dark:text-gray-400">
                 <tr>
@@ -91,13 +104,14 @@ x-init="focusSearchBox()"
                 </tr>
             </head>
             <tbody>
-            
+
             <?php $counter = 0; ?>
             @foreach($orders as $order)
-            <?php 
-            
+            <?php
+
                 $counter ++ ;$incomplete = '';
-                
+                $transaction_id = $order->transaction_id;
+
                 if ($order->customers->count())
                     $custId = $order->customers->first()->id;
                 else $custId = 0;
@@ -105,32 +119,37 @@ x-init="focusSearchBox()"
                 if ($order->code)
                     $status = $order->cc_status;
                 else $status = orderStatus()->get($order->status);
-                
+
                 $total = $order->total;
                 $companyInfo = (!$order->b_firstname && !$order->b_lastname && $order->s_firstname && $order->s_lastname) ? '<b>'.$order->b_company . '</b>-'.$order->s_firstname . ' ' .$order->s_lastname .'*': $order->b_company;
                 $id = $order->id;
                 $po = $order->po;
-                
+
                 if ($po)
                     $companyInfo .= ' ('. $po .') ';
-                        
+
             ?>
-            <tr :class="status == 0 ? 'odd:bg-red-100 even:bg-red-50 hover:bg-red-200 even:bg-red-50' : 'odd:bg-gray-100 hover:bg-gray-200 even:bg-gray-50'" 
-                wire:key="{{$order->id}}" 
+            <tr :class="status == 0 ? 'odd:bg-red-100 even:bg-red-50 hover:bg-red-200 even:bg-red-50' : 'odd:bg-gray-100 hover:bg-gray-200 even:bg-gray-50'"
+                wire:key="{{$order->id}}"
                 class="odd:dark:bg-gray-900 dark:text-gray-200 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                
+
                 <td class="px-3 py-2">
-                    <x-input-invoice :$counter :$id :$status :$custId :isOrderPage=true/> 
+                    <button type="button" data-id="{{$id}}" data-status="{{$status}}" data-custid="{{$custId}}" data-isOrderPage="false" class="menu-btn inline-flex items-center text-gray-500 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-3 py-1.5 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                        <svg class="w-2.5 h-2.5 mr-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+                        </svg>
+                        Options
+                    </button>
                 </td>
                 <td class="px-3 py-2">
                     <a href="#" id="editorder" wire:click.prevent="loadOrder({{$id}})" data-id="{{$id}}" class="cursor-pointer dark:hover:text-white text-sky-600">{{$order->id}}</a>
-                    
+
                 </td>
                 <td class="px-3 py-2">{!! $companyInfo !!}</td>
                 <td class="px-3 py-2 text-center">{{$order->created_at->format('m/d/Y')}}</td>
                 <td class="px-3 py-2 text-right">${{number_format($total,2)}}</td>
             </tr>
-            
+
             @endforeach
             </tbody>
             <tfoot>
@@ -141,10 +160,49 @@ x-init="focusSearchBox()"
             </tfoot>
         </table>
     </div>
-    
+
     @if($orders->hasPages())
     <div class="bg-gray-50 rounded-lg dark:bg-gray-800">
         {{ $orders->links('livewire.pagination') }}
     </div>
     @endif
+
+@push ('jquery')
+<script>
+    $(document).ready( function() {
+        $('.menu-btn').popupMenu({
+            menuSelector: "#popup-menu",
+            selectors: {
+                menuItem: ".menu-item"
+            },
+
+            // onMenuOpen now receives the full data object!
+            onMenuOpen: (data, menu) => {
+                debugger
+                // The 'data' object contains all attributes from the button,
+                // e.g., data.id, data.invoiceid, data.sku, etc.
+
+                // Example Button HTML: <button data-orderid="123" data-customername="Jane" data-lineindex="5" ...>
+                const id = data.id;
+                const custId = data.custid;
+                const status = data.status;
+
+                // Your logic is now entirely custom:
+                const openWindow = (url) => `window.open('${url}', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`;
+
+                menu.find(".menu-item").attr("data-id", id);
+                menu.find("li.print").attr("onclick", `window.open('/admin/estimates/${id}/print', 'new', 'toolbar=no,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400'); return false;`);
+                menu.find("li.refund").attr({
+                    "wire:click.prevent": `refundInvoice(${id})`,
+                    "wire:confirm": `You're about to issue a refund for the order # ${id}. Are you sure you want to do that?`
+                });
+
+                menu.find("li.deleteinvoice").attr({
+                    "wire:click.prevent": `deleteInvoice(${id})`
+                });
+            }
+        });
+    })
+    </script>
+@endpush
 </div>
