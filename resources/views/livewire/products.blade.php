@@ -32,6 +32,7 @@ if ($event.key === '=') {
 
     <!-- Page Header -->
         @section ('button-menu')
+        <div x-on:open-new-tab.window="window.open($event.detail.url, '_blank')"></div>
         <div class="relative">
             <button id="actions" data-dropdown-toggle="dropdown" class="mt-1 mr-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" type="button">Actions<svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
@@ -46,9 +47,10 @@ if ($event.key === '=') {
                         <button id="exportproducts-modal" onclick='window.location.href="products/1/export";' type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Export Products</button>
                     </li>
                     <li>
-                        <div x-on:open-new-tab.window="window.open($event.detail.url, '_blank')">
-                            <button wire:click="unproducedProducts('sps')" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Unproduced Products</button>
-                        </div>
+                        <button wire:click="unproducedProducts()" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Unproduced Products</button>
+                    </li>
+                    <li>
+                        <button id="process" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Unproduced Products</button>
                     </li>
                 </ul>
 
@@ -224,6 +226,11 @@ if ($event.key === '=') {
         }).on('mouseleave', 'span.hide', function () {
             $(this).css('opacity',0)
         })
+
+        $('#process').on('click', function () {
+            let signinUrl =  "products/sps/printmissingproducts";
+            window.open(signinUrl, "_blank", "toolbar=no,scrollbars=yes,resizable=yes,top=0,left=500,width=600,height=800");
+        });
 
         $(document).on("click", ".menu-btn", function (e) {
             e.stopPropagation(); // Prevent closing when clicking the button
