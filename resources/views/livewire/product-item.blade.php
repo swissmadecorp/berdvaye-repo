@@ -245,6 +245,7 @@
                 Slider()
             })
 
+            debugger
             $('#p_model').devbridgeAutocomplete({
                 serviceUrl: "{{route('get.retailproducts')}}",
                 showNoSuggestionNotice : true,
