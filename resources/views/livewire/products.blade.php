@@ -47,9 +47,6 @@ if ($event.key === '=') {
                         <button id="exportproducts-modal" onclick='window.location.href="products/1/export";' type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Export Products</button>
                     </li>
                     <li>
-                        <button wire:click="unproducedProducts()" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Unproduced Products</button>
-                    </li>
-                    <li>
                         <button id="process" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Unproduced Products</button>
                     </li>
                 </ul>

@@ -138,7 +138,7 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     // Route::resource('products', "App\Http\Controllers\ProductsController");
     // Route::get('products/{id}/printinventory/{params}/{date?}', 'App\Http\Controllers\ProductsController@printInventory');
     // Route::get('products/{id}/print', 'App\Http\Controllers\ProductsController@print');
-    // Route::get('products/{model}/printmissingproducts', 'App\Http\Controllers\ProductsController@printMissingProducts');
+    Route::get('products/{model}/printmissingproducts', 'App\Http\Controllers\ProductsController@printMissingProducts');
     // Route::get('products/create', "App\Http\Controllers\ProductsController@create");
     // Route::get('products/{id}/duplicate', "App\Http\Controllers\ProductsController@duplicate");
     // Route::post('products/store', "App\Http\Controllers\ProductsController@store");
