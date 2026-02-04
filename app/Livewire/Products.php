@@ -105,7 +105,7 @@ class Products extends Component
 
     public function unproducedProducts($model='sps') {
         dd($model);
-        $signinUrl =  "window.location.href='products/$model/printmissingproducts'";
+        $signinUrl =  "/products/$model/printmissingproducts";
         $this->dispatch('open-new-tab', url:$signinUrl);
     }
 
