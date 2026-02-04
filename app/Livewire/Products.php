@@ -103,12 +103,6 @@ class Products extends Component
         $this->reset('editProductID','productQty','productDealerPrice','productFieldName');
     }
 
-    public function unproducedProducts($model='sps') {
-        dd($model);
-        $signinUrl =  "/products/$model/printmissingproducts";
-        $this->dispatch('open-new-tab', url:$signinUrl);
-    }
-
     public function createInvoice($id) {
 
         if (!empty($this->productSelections)) {
