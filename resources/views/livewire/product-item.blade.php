@@ -8,8 +8,8 @@
 
 @push ('footer')
 <script src="/js/jquery.autocomplete.min.js"></script>
-<script src="/js/jquery.mask.js" type="text/javascript"></script>
 <script src="/js/editable-select/jquery-editable-select.js"></script>
+<script src="/js/jquery.mask.js" type="text/javascript"></script>
 @endpush
 
     <!-- Berdvaye product-item -->
