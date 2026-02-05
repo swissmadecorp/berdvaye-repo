@@ -1,17 +1,5 @@
 <div>
     <!-- Do what you can, with what you have, where you are. - Theodore Roosevelt -->
-@push('main_header')
-<!-- <link href="/css/dropzone.css" rel="stylesheet"> -->
-<link href="/js/editable-select/jquery-editable-select.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/css/lightgallery-bundle.min.css" integrity="sha512-nUqPe0+ak577sKSMThGcKJauRI7ENhKC2FQAOOmdyCYSrUh0GnwLsZNYqwilpMmplN+3nO3zso8CWUgu33BDag==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-@endpush
-
-@push ('footer')
-<script src="/js/jquery.autocomplete.min.js"></script>
-<script src="/js/editable-select/jquery-editable-select.js"></script>
-<script src="/js/jquery.mask.js" type="text/javascript"></script>
-@endpush
-
 
     <div wire:ignore.self id="slideover-container" class="fixed inset-0 w-full h-full invisible z-50">
         <div wire:ignore.self onclick="toggleSlideover()" id="slideover-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
