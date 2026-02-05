@@ -16,17 +16,17 @@ if ($event.key === '=') {
                 focusSearchBox();
             }
         }">
-@section('main_header')
+@push('main_header')
 <!-- <link href="/css/dropzone.css" rel="stylesheet"> -->
 <link href="/js/editable-select/jquery-editable-select.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/css/lightgallery-bundle.min.css" integrity="sha512-nUqPe0+ak577sKSMThGcKJauRI7ENhKC2FQAOOmdyCYSrUh0GnwLsZNYqwilpMmplN+3nO3zso8CWUgu33BDag==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-@stop
+@endpush
 
-@section ('footer')
+@push ('footer')
 <script src="/js/jquery.autocomplete.min.js"></script>
 <script src="/js/editable-select/jquery-editable-select.js"></script>
 <script src="/js/jquery.mask.js" type="text/javascript"></script>
-@stop
+@endpush
 
     {{-- To attain knowledge, add things every day; To attain wisdom, subtract things every day. --}}
 

@@ -38,7 +38,7 @@
     <link href="/css/dashboard.css" rel="stylesheet">
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
 
-   @stack('main_header')
+   @yield('main_header')
    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
@@ -218,8 +218,8 @@
     <script src="/js/general.js"></script>
     <script src="/js/popupMenu.jquery.js"></script>
     <script src="/js/jquery-confirm/jquery-confirm.min.js"></script>
-    @stack('footer')
-    @stack('jquery')
+    @yield('footer')
+    @yield('jquery')
 
     <script>
 
