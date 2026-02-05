@@ -427,7 +427,7 @@ Invoiced
                 $pdf::WriteHTML(ob_get_clean(), true, false, false, false, '');
                 ob_start();
 
-                if ($placedMethod != 'Estimate' && $placedMethod != 'Commercial') {
+                if ($placedMethod != 'Estimate') {
                     $grandTotal = 0; $totalPaid=0;$creditPaid=0;
                     $grandTotal = $order->total;
 
