@@ -437,7 +437,6 @@ class ProductsController extends Controller
         foreach ($models as $model) {
         if (in_array($model,$excludeModels)) continue;
         $products = Product::select('p_serial')->where('p_model', $model)->get();
-        dd($products);
         if ($products->isEmpty()) return 'No model was found with the name: '.$model;
 
         $serials_are = array();
