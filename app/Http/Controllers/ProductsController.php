@@ -197,7 +197,7 @@ class ProductsController extends Controller
     }
 
     public function ajaxGetRetailProducts(Request $request) {
-        return $data['suggestions'][] = array('value'=>"Hello",'data' => 1);
+        \Log::debug('AJAX Get Retail Products called');
         if ($request->ajax()) {
             // return $request;
             $id = $request['query'];
