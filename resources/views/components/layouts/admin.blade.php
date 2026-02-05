@@ -218,8 +218,8 @@
     <script src="/js/general.js"></script>
     <script src="/js/popupMenu.jquery.js"></script>
     <script src="/js/jquery-confirm/jquery-confirm.min.js"></script>
-    @stack('footer')
-    @stack('jquery')
+    @yield('footer')
+    @yield('jquery')
 
     <script>
 
