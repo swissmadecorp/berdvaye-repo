@@ -1,5 +1,17 @@
-<div> 
-    <!-- Do what you can, with what you have, where you are. - Theodore Roosevelt --> 
+<div>
+    <!-- Do what you can, with what you have, where you are. - Theodore Roosevelt -->
+@push('main_header')
+<!-- <link href="/css/dropzone.css" rel="stylesheet"> -->
+<link href="/js/editable-select/jquery-editable-select.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/css/lightgallery-bundle.min.css" integrity="sha512-nUqPe0+ak577sKSMThGcKJauRI7ENhKC2FQAOOmdyCYSrUh0GnwLsZNYqwilpMmplN+3nO3zso8CWUgu33BDag==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+@endpush
+
+@push ('footer')
+<script src="/js/jquery.autocomplete.min.js"></script>
+<script src="/js/editable-select/jquery-editable-select.js"></script>
+<script src="/js/jquery.mask.js" type="text/javascript"></script>
+@endpush
+
 
     <div wire:ignore.self id="slideover-container" class="fixed inset-0 w-full h-full invisible z-50">
         <div wire:ignore.self onclick="toggleSlideover()" id="slideover-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
@@ -11,13 +23,13 @@
                 </svg>
             </div>
             <div class="p-4 relative mt-2">
-                
+
                 @if (isset($order))
                 @inject('countries','App\Libs\Countries')
                 <div class="customer_address mb-3">
-                <?php 
+                <?php
                         $address2 = '';
-                        
+
                         if (in_array($order->b_company,['Website','eBay','Chrono24'])) {
                             $state_s = $countries->getStateCodeFromCountry($order->s_state);
                             $country = $countries->getCountry($order->s_country);
@@ -26,7 +38,7 @@
                             echo !empty($order->s_address1) ? $order->s_address1 .'<br>' : '';
                             echo !empty($order->s_address2) ? $order->s_address2 .'<br>' : '';
                             echo !empty($order->s_city) ? $order->s_city .', '. $state_s . ' ' . $order->s_zip.'<br>': '';
-                            
+
                             echo !empty($order->b_phone) ? $order->b_phone . '<br>' : '';
                             echo !empty($order->po) ? 'PO #: '.$order->po . '<br>' : '';
                         } else {
@@ -37,14 +49,14 @@
                         echo !empty($order->b_address1) ? $order->b_address1 .'<br>' : '';
                         echo !empty($order->b_address2) ? $order->b_address2 .'<br>' : '';
                         echo !empty($order->b_city) ? $order->b_city .', '. $state_b . ' ' . $order->b_zip.'<br>': '';
-                        
+
                         echo !empty($order->b_phone) ? $order->b_phone . '<br>' : '';
                         echo !empty($order->po) ? 'PO #: '.$order->po . '<br>' : '';
                         }
                             //die($order->b_company);
                     ?>
                 </div>
-                
+
                 <table x-ref="table" class="w-full text-sm text-left rtl:text-right dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
@@ -56,15 +68,15 @@
                         </tr>
                     </head>
                     <tbody>
-                        
+
                         <?php $totalLeft = $order->total ?>
                         <?php $calc = $order->total ?>
-                        
+
                         @if (count($order->payments))
                         @foreach ($order->payments as $payment)
                         <?php $totalLeft = $totalLeft - $payment->amount ?>
                         <tr class="odd:bg-white hover:bg-gray-50 odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                            <td>${{ number_format($calc,2) }}</td> 
+                            <td>${{ number_format($calc,2) }}</td>
                             <td>{{ $payment->ref }}</td>
                             <td class="text-right">${{ number_format($payment->amount,2) }}</td>
                             <td class="px-3 py-2 text-center">{{ $payment->created_at->format('m/d/Y') }}</td>
@@ -107,12 +119,12 @@
                             </svg>
                             </button>
                         </td>
-                        
+
                     </tr>
                     @else
                     <td colspan="6" style="text-align: center; color: green">Order has been paid fully</td>
                     @endif
-                    @else 
+                    @else
                 @if ($order->status == 0)
                 <tr>
                     <td>
@@ -130,7 +142,7 @@
                         @error('paymentAmount')
                         <span class="text-danger">{{$message}}</span><br>
                         @enderror
-                        
+
                         <button type="button" wire:click.prevent="$set('paymentAmount',{{$totalLeft}})" class="rounded align-middle border-solid ease-in-out duration-300 border border-gray-600 p-1 hover:bg-gray-200" aria-label="Left Align">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
@@ -171,11 +183,11 @@
             @endif
         </div>
     </div>
-    
+
 </div>
 
-<script> 
-  
+<script>
+
     function toggleSlideover(id) {
             document.getElementById('slideover-container').classList.toggle('invisible')
             document.getElementById('slideover-bg').classList.toggle('opacity-0')
@@ -183,5 +195,5 @@
             document.getElementById('slideover').classList.toggle('translate-x-full')
 
     }
-    
+
 </script>
