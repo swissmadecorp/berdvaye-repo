@@ -21,7 +21,7 @@ class InquiryController extends Controller
         //         'productsize' => $request['productsize'],
         //         'mobile'=> $request['mobile']
         //     );
-
+\Log::info('Captcha response: '.$request);
            $validationRules=[
                 'fullname' => 'required',
                 'email' => 'required|email',
