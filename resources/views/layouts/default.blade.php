@@ -40,11 +40,12 @@
 <link href="/css/berdvaye_global.css" rel="stylesheet">
 <link href="/css/total-cart-pro.css" rel="stylesheet">
 @yield('header')
+<script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
 <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 <script type="text/javascript" src="/js/jQuery-viewport-checker-master/dist/jquery.viewportchecker.min.js"></script>
 <script type="text/javascript" src="/js/bootstrap-validator/js/validator.min.js"></script>
 <script type="text/javascript" src="/js/OwlCarousel2-2.3.4/dist/owl.carousel.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> -->
 
 <meta name="google-site-verification" content="hwCyBKuLmbx_fUmImbIra7vM-Wwyg-6h6sMFUZDp_II" />
 @vite(['resources/css/app.css','resources/js/app.js'])
