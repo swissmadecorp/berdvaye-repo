@@ -20,7 +20,7 @@
   @section('header')
     <script>
       function onSubmit(token) {
-        document.getElementById("demo-form").submit();
+        document.getElementById("recaptcha").submit();
       }
     </script>
   @endsection
@@ -204,7 +204,7 @@
                 <h2 class="text-uppercase text-gray-300">Get in Touch</h2>
                 <small class="text-gray-300">We’d love to hear from you!</small>
                 <!-- <form role="form" id="contactForm" method="post" action="php/contact.php"> -->
-                <form method="POST" action="{{route('ajax.inquiry')}}" accept-charset="UTF-8" id="contactForm">
+                <form method="POST" accept-charset="UTF-8" id="contactForm">
                   @csrf
                   <div class="messages"></div>
                   <ul class="defaultForm-list">
