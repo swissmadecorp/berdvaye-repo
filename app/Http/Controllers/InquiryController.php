@@ -22,8 +22,6 @@ class InquiryController extends Controller
         //         'mobile'=> $request['mobile']
         //     );
 
-                    \Log::info('Inquiry form data: '.json_encode($request->all()));
-return;
            $validationRules=[
                 'fullname' => 'required',
                 'email' => 'required|email',
@@ -40,7 +38,7 @@ return;
             }
 
 
-            $response = $inputs["g-recaptcha-response"];
+            $response = $request["g-recaptcha-response"];
             $url = 'https://www.google.com/recaptcha/api/siteverify';
             $data = array(
                 'secret' => config('recapcha.secret_v2'),
