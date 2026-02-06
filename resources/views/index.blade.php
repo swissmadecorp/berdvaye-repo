@@ -233,7 +233,7 @@
                       </div>
                     </li>
                     <li class="text-left">
-                      <button class="g-recaptcha btn"
+                      <button class="g-recaptcha btn" id="recaptcha"
                         data-sitekey="6Ldzg2IsAAAAABZ7dmd2RujpF6QYPET7CfFRgA3Z"
                         data-callback='onSubmit'
                         data-action='submit'>

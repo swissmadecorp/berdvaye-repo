@@ -68,6 +68,12 @@ src="https://www.facebook.com/tr?id=2264134867419924&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
 
+<script>
+  function onSubmit(token) {
+    document.getElementById("recaptcha").submit();
+  }
+</script>
+
 </head>
 
 <body class="font-playfair">
