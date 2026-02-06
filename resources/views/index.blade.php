@@ -4,15 +4,6 @@
   Berdvaye Inc.: Modern Art with Vintage Parts
 @endsection
 
-@section('header')
-  <script>
-    function onSubmit(token) {
-      document.getElementById("contactForm").submit();
-    }
-  </script>
-@endsection
-
-
 @section ('content')
 <div class="pageLayout">
   <!-- HEADER -->
@@ -234,12 +225,8 @@
                       </div>
                     </li>
                     <li class="text-left">
-                      <button class="g-recaptcha btn"
-                        data-sitekey="6Ldzg2IsAAAAABZ7dmd2RujpF6QYPET7CfFRgA3Z"
-                        data-callback='onSubmit'
-                        data-action='submit'>
-                      Submit
-                    </button>
+                      <div class="g-recaptcha" data-sitekey="6Ld13WIsAAAAALbIPw6jpuKrx_9DQAT-y7IK52Mn" data-action="LOGIN"></div>
+                      <button type="submit" class="btn btn-primary">Submit</button>
                     </li>
                   </ul>
                 <!-- </form> -->

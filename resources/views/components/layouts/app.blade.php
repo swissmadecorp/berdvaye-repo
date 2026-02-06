@@ -41,7 +41,6 @@
 <link href="/css/berdvaye_global.css" rel="stylesheet">
 <link href="/css/total-cart-pro.css" rel="stylesheet">
 @stack('header')
-<script src="https://www.google.com/recaptcha/enterprise.js?render=6Ldzg2IsAAAAABZ7dmd2RujpF6QYPET7CfFRgA3Z"></script>
 <script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
 <script type="text/javascript" src="/js/jQuery-viewport-checker-master/dist/jquery.viewportchecker.min.js"></script>
 <script type="text/javascript" src="/js/bootstrap-validator/js/validator.min.js"></script>
@@ -217,6 +216,7 @@ src="https://www.facebook.com/tr?id=2264134867419924&ev=PageView&noscript=1"
     @stack('footer')
     @stack('jquery')
 
+    <script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
     <script type="text/javascript">
         jQuery.noConflict();
         jQuery(document).ready(function($) {
