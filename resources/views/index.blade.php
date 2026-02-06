@@ -233,8 +233,11 @@
                       </div>
                     </li>
                     <li class="text-left">
-                      <div class="g-recaptcha" data-sitekey="6Ld13WIsAAAAALbIPw6jpuKrx_9DQAT-y7IK52Mn" data-action="LOGIN"></div><br>
-                      <button type="submit" class="btn">Submit</button>
+                      <!-- <div class="g-recaptcha" data-sitekey="6Ld13WIsAAAAALbIPw6jpuKrx_9DQAT-y7IK52Mn" data-action="LOGIN"></div><br> -->
+                      <button class="g-recaptcha btn"
+                          data-sitekey="6Ld13WIsAAAAALbIPw6jpuKrx_9DQAT-y7IK52Mn"
+                          data-callback='onSubmit'
+                          data-action='submit'>Submit</button>
                     </li>
                   </ul>
                 <!-- </form> -->
