@@ -17,6 +17,14 @@
     </div>
   </header>
 
+  @section('header')
+    <script>
+      function onSubmit(token) {
+        document.getElementById("demo-form").submit();
+      }
+    </script>
+  @endsection
+
   <!-- MAIN -->
   <!-- https://www.producermichael.com/ -->
   <main class="bg-darkgray">
@@ -225,7 +233,12 @@
                       </div>
                     </li>
                     <li class="text-left">
-                      <button type="submit" class="btn">Submit</button>
+                      <button class="g-recaptcha btn"
+                        data-sitekey="6Ldzg2IsAAAAABZ7dmd2RujpF6QYPET7CfFRgA3Z"
+                        data-callback='onSubmit'
+                        data-action='submit'>
+                      Submit
+                    </button>
                     </li>
                   </ul>
                 <!-- </form> -->
