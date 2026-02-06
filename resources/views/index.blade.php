@@ -4,6 +4,15 @@
   Berdvaye Inc.: Modern Art with Vintage Parts
 @endsection
 
+@section('header')
+  <script>
+    function onSubmit(token) {
+      document.getElementById("contactForm").submit();
+    }
+  </script>
+@endsection
+
+
 @section ('content')
 <div class="pageLayout">
   <!-- HEADER -->
@@ -16,14 +25,6 @@
         </div>
     </div>
   </header>
-
-  @section('header')
-    <script>
-      function onSubmit(token) {
-        document.getElementById("recaptcha").submit();
-      }
-    </script>
-  @endsection
 
   <!-- MAIN -->
   <!-- https://www.producermichael.com/ -->
@@ -204,7 +205,7 @@
                 <h2 class="text-uppercase text-gray-300">Get in Touch</h2>
                 <small class="text-gray-300">We’d love to hear from you!</small>
                 <!-- <form role="form" id="contactForm" method="post" action="php/contact.php"> -->
-                <form method="POST" accept-charset="UTF-8" id="contactForm">
+                <form method="POST" id="contactForm" action="{{route('ajax.inquiry')}}" accept-charset="UTF-8" id="contactForm">
                   @csrf
                   <div class="messages"></div>
                   <ul class="defaultForm-list">
@@ -233,7 +234,7 @@
                       </div>
                     </li>
                     <li class="text-left">
-                      <button class="g-recaptcha btn" id="recaptcha"
+                      <button class="g-recaptcha btn"
                         data-sitekey="6Ldzg2IsAAAAABZ7dmd2RujpF6QYPET7CfFRgA3Z"
                         data-callback='onSubmit'
                         data-action='submit'>
