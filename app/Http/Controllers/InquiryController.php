@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Mail;
 class InquiryController extends Controller
 {
    public function ajaxInquiry(Request $request) {
-dd('asdf');
+
        if ($request->ajax()) {
 
         //    $data = array(

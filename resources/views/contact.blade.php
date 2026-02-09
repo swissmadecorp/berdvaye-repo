@@ -7,8 +7,19 @@
 @section ("header")
  <script>
    function onSubmit(token) {
-     document.getElementById("contactform").submit();
-   }
+    console.log("reCAPTCHA verified. Token:", token);
+
+    var form = document.getElementById("contactForm");
+
+    // requestSubmit() behaves exactly like a user clicking a submit button
+    // It will trigger your jQuery .on('submit') listener
+    if (typeof form.requestSubmit === "function") {
+        form.requestSubmit();
+    } else {
+        // Fallback for very old browsers
+        $(form).trigger('submit');
+    }
+}
  </script>
 @endsection
 
@@ -178,24 +189,29 @@ setTimeout( function(){
     });
 
     $('#contactForm').validator().on('submit', function(e) {
+        // If validator says it's okay...
         if (!e.isDefaultPrevented()) {
-            // var url = "assets/php/contact.php";
+            var url = $(this).attr('action');
 
             $.ajax({
                 type: "POST",
-                url: "{{ route('ajax.inquiry') }}",
+                url: url,
+                // .serialize() will now include 'g-recaptcha-response'
                 data: $(this).serialize(),
                 success: function(data) {
                     var messageAlert = 'alert-' + data.type;
                     var messageText = data.message;
-                    var alertBox = '<div class="alert text-gray-200 ' + messageAlert + ' alert-dismissable"> <a class="close" data-dismiss="alert" aria-hidden="true">&times;</a>' + messageText + '</div>';
+                    var alertBox = '<div class="alert text-gray-200 ' + messageAlert + ' alert-dismissable">...</div>';
+
                     if (messageAlert && messageText) {
                         $('#contactForm').find('.messages').html(alertBox);
                         $('#contactForm')[0].reset();
+                        // Important: reset reCAPTCHA so it can be used again without refresh
+                        grecaptcha.enterprise.reset();
                     }
                 }
             });
-            return false;
+            return false; // Prevents actual page reload
         }
     });
 
