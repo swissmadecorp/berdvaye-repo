@@ -4,14 +4,6 @@
   Berdvaye Inc.: Modern Art with Vintage Parts
 @endsection
 
-@section ("header")
- <script>
-   function onSubmit(token) {
-     document.getElementById("contactform").submit();
-   }
- </script>
-@endsection
-
 @section ('content')
 <div class="pageLayout">
   <!-- HEADER -->
@@ -233,8 +225,14 @@
                       </div>
                     </li>
                     <li class="text-left">
-                      <div class="g-recaptcha" data-sitekey="6Ld13WIsAAAAALbIPw6jpuKrx_9DQAT-y7IK52Mn" data-action="LOGIN"></div><br>
-                      <button type="submit" class="btn">Submit</button>
+                      <!-- <div class="g-recaptcha" data-sitekey="6Ld13WIsAAAAALbIPw6jpuKrx_9DQAT-y7IK52Mn" data-action="LOGIN"></div><br>
+                      <button type="submit" class="btn">Submit</button> -->
+                      <button class="g-recaptcha btn"
+                            data-sitekey="6LeusmIsAAAAAKH8WC9XPp86TSJ9hjKnKpgXYQCT"
+                            data-callback="onSubmit"
+                            data-action="submit">
+                        Submit
+                    </button>
                     </li>
                   </ul>
                 <!-- </form> -->
@@ -472,25 +470,30 @@ $('.owl-dots > .owl-dot').on('click', function () {
 //     e.preventDefault();
 // });
 
-    $('#contactForm').validator().on('submit', function(e) {
+  $('#contactForm').validator().on('submit', function(e) {
+        // If validator says it's okay...
         if (!e.isDefaultPrevented()) {
-            //var url = "php/contact.php";
             var url = $(this).attr('action');
+
             $.ajax({
                 type: "POST",
                 url: url,
+                // .serialize() will now include 'g-recaptcha-response'
                 data: $(this).serialize(),
                 success: function(data) {
                     var messageAlert = 'alert-' + data.type;
                     var messageText = data.message;
-                    var alertBox = '<div class="alert text-gray-200 ' + messageAlert + ' alert-dismissable"> <a class="close" data-dismiss="alert" aria-hidden="true">&times;</a>' + messageText + '</div>';
+                    var alertBox = '<div class="alert text-gray-200 ' + messageAlert + ' alert-dismissable">...</div>';
+
                     if (messageAlert && messageText) {
                         $('#contactForm').find('.messages').html(alertBox);
                         $('#contactForm')[0].reset();
+                        // Important: reset reCAPTCHA so it can be used again without refresh
+                        grecaptcha.enterprise.reset();
                     }
                 }
             });
-            return false;
+            return false; // Prevents actual page reload
         }
     });
 
