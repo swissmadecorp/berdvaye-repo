@@ -139,7 +139,7 @@
                                             </div>
                                             <input id="address2" wire:model="customer.address2" type="tel" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder-gray-400" placeholder="Address 2" required autocomplete />
                                             <div>
-                                                <input id="bcountry" type="hidden" value="{{$customer['card-billing-address-country-code']}}">
+                                                <input id="bcountry" type="hidden" value="{{ isset($customer['card-billing-address-country-code']) ? $customer['card-billing-address-country-code'] : '' }}" />
                                                 <select id="country" wire:model.live="selectedBCountry" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                                                     @foreach($this->countries as $country)
                                                         <option value="{{ $country->id }}">{{ $country->name }}</option>
