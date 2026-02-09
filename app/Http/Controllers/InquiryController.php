@@ -37,16 +37,15 @@ class InquiryController extends Controller
                 return response()->json($validator->errors()->all());
             }
 
-            $forbiddenWods = ['OR', 'AND', 'XOR','sleep()','sysdate()','%','concat','union','select','insert','update','delete','drop','truncate','exec','declare','--','#'];
-            return explode([' ',','], $request['message']);
-            foreach (explode(' ', $request['message']) as $word) {
+            $forbiddenWods = ['OR', 'AND', 'XOR','sleep','sysdate','%','concat','union','select','insert','update','delete','drop','truncate','exec','declare','--','#'];
+            $parts = preg_split('/[ ,;|]/', $request['message']);
+
+            foreach ($parts as $word) {
                 if (in_array($word, $forbiddenWods)) {
                     return response()->json(['message' => 'Your message contains forbidden words. Please remove them and try again.']);
                 }
             }
 
-
-            return response()->json(['message' => 'Hello World']);
             $response = $request["g-recaptcha-response"];
             $url = 'https://www.google.com/recaptcha/api/siteverify';
             $data = array(
