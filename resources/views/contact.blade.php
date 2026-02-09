@@ -7,19 +7,19 @@
 @section ("header")
  <script>
    function onSubmit(token) {
-    console.log("reCAPTCHA verified. Token:", token);
+      // console.log("reCAPTCHA verified. Token:", token);
 
-    var form = document.getElementById("contactForm");
+      var form = document.getElementById("contactForm");
 
-    // requestSubmit() behaves exactly like a user clicking a submit button
-    // It will trigger your jQuery .on('submit') listener
-    if (typeof form.requestSubmit === "function") {
-        form.requestSubmit();
-    } else {
-        // Fallback for very old browsers
-        $(form).trigger('submit');
-    }
-}
+      // requestSubmit() behaves exactly like a user clicking a submit button
+      // It will trigger your jQuery .on('submit') listener
+      if (typeof form.requestSubmit === "function") {
+          form.requestSubmit();
+      } else {
+          // Fallback for very old browsers
+          $(form).trigger('submit');
+      }
+  }
  </script>
 @endsection
 
