@@ -17,6 +17,7 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\WithPagination;
+use App\Services\UspsService;
 use App\Models\Credit;
 use App\Models\Returns;
 use App\Models\OrderReturn;
@@ -948,11 +949,11 @@ class InvoiceItem extends Component
         } elseif ($propertyName == 'customer.s_zip') {
             $szip = trim($this->customer['s_zip']);
             if (strlen($szip) == 5) {
-                $address = addressFromZip($szip);
+                $location = app(UspsService::class)->getCityState($szip);
 
                 $this->selectedSCountry = 231;
-                $this->customer['s_city'] = $address['city'];
-                $this->selectedSState = $address['state'];
+                $this->customer['s_city'] = $location['city'];
+                $this->selectedSState = $location['state'];
             }
         } elseif ($propertyName == 'customer.b_zip') {
             $bzip = trim($this->customer['b_zip']);
