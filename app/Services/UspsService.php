@@ -34,6 +34,7 @@ class UspsService
                     'grant_type'    => 'client_credentials',
                     'client_id'     => $this->clientId,
                     'client_secret' => $this->clientSecret,
+                    'scope'         => 'addresses',
                 ],
                 'headers' => [
                     'Content-Type' => 'application/x-www-form-urlencoded',
