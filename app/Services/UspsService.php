@@ -5,13 +5,15 @@ namespace App\Services;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class UspsService
 {
     protected $client;
     protected $clientId;
     protected $clientSecret;
-    protected $baseUri = 'https://apis.usps.com/';
+    // Tip: Use https://apis-tem.usps.com/ for sandbox/testing
+    protected $baseUri = 'https://apis-tem.usps.com/';
 
     public function __construct()
     {
@@ -20,72 +22,65 @@ class UspsService
 
         $this->client = new Client([
             'base_uri' => $this->baseUri,
+            'timeout'  => 10,
         ]);
     }
 
-    /**
-     * Get OAuth access token (cached for performance)
-     */
     protected function getAccessToken()
     {
         return Cache::remember('usps_access_token', 3500, function () {
-            $response = $this->client->post('oauth2/v3/token', [
-                'headers' => [
-                    'Content-Type' => 'application/json', // Force exact header
-                    'Accept'       => 'application/json',
-                ],
-                // Use 'body' with manual json_encode to ensure no extra formatting
-                'body' => json_encode([
-                    'client_id'     => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'grant_type'    => 'client_credentials',
-                ]),
-            ]);
+            try {
+                $response = $this->client->post('oauth2/v3/token', [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept'       => 'application/json',
+                    ],
+                    'json' => [
+                        'client_id'     => $this->clientId,
+                        'client_secret' => $this->clientSecret,
+                        'grant_type'    => 'client_credentials',
+                    ],
+                ]);
 
-            $data = json_decode($response->getBody(), true);
+                $data = json_decode($response->getBody(), true);
+                return $data['access_token'];
 
-            if (!isset($data['access_token'])) {
-                throw new \Exception('Failed to obtain USPS access token: ' . ($data['error_description'] ?? 'Unknown Error'));
+            } catch (RequestException $e) {
+                $error = $e->hasResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
+                Log::error('USPS Auth Failed: ' . $error);
+                throw $e;
             }
-
-            return $data['access_token'];
         });
     }
 
-    /**
-     * Look up city and state by ZIP code
-     *
-     * @param string $zipCode
-     * @return array|null ['city' => 'BEVERLY HILLS', 'state' => 'CA', 'zipCode' => '90210']
-     */
     public function getCityState($zipCode)
     {
         try {
             $accessToken = $this->getAccessToken();
 
             $response = $this->client->get('addresses/v3/city-state', [
-                'query' => [
-                    'ZIPCode' => $zipCode,
-                ],
+                'query' => ['ZIPCode' => $zipCode],
                 'headers' => [
                     'Authorization' => 'Bearer ' . $accessToken,
-                    'Accept'         => 'application/json',
+                    'Accept'        => 'application/json',
                 ],
             ]);
 
             $result = json_decode($response->getBody(), true);
 
-            // USPS v3 typically returns an object with city, state, ZIPCode directly
-            // if found, or an error object if not.
+            // Handle 200 OK but "Address Not Found" scenarios
+            if (!isset($result['city'])) {
+                return null;
+            }
+
             return [
-                'city'    => $result['city'] ?? null,
-                'state'   => $result['state'] ?? null,
+                'city'    => $result['city'],
+                'state'   => $result['state'],
                 'zipCode' => $result['ZIPCode'] ?? $zipCode,
             ];
 
         } catch (RequestException $e) {
-            $errorBody = $e->hasResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
-            \Log::error('USPS API Error: ' . $errorBody);
+            Log::error('USPS LookUp Error: ' . ($e->hasResponse() ? $e->getResponse()->getBody() : $e->getMessage()));
             return null;
         }
     }

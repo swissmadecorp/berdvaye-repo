@@ -950,7 +950,7 @@ class InvoiceItem extends Component
             $szip = trim($this->customer['s_zip']);
             if (strlen($szip) == 5) {
                 $location = app(UspsService::class)->getCityState($szip);
-dd($location);
+
                 $this->selectedSCountry = 231;
                 $this->customer['s_city'] = $location['city'];
                 $this->selectedSState = $location['state'];
@@ -958,11 +958,11 @@ dd($location);
         } elseif ($propertyName == 'customer.b_zip') {
             $bzip = trim($this->customer['b_zip']);
             if (strlen($bzip) == 5) {
-                $address = addressFromZip($bzip);
+                $location = app(UspsService::class)->getCityState($bzip);
 
                 $this->selectedBCountry = 231;
-                $this->customer['b_city'] = $address['city'];
-                $this->selectedBState = $address['state'];
+                $this->customer['b_city'] = $location['city'];
+                $this->selectedBState = $location['state'];
             }
 
         } elseif ($propertyName == 'customer.s_firstname') {

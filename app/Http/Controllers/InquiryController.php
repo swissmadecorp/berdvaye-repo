@@ -13,18 +13,10 @@ class InquiryController extends Controller
 
        if ($request->ajax()) {
 
-        //    $data = array(
-        //         'body'=>$request['message'],
-        //         'fullname'=>$request['fullname'],
-        //         'email' => $request['email'],
-        //         'product' => $request['product'],
-        //         'productsize' => $request['productsize'],
-        //         'mobile'=> $request['mobile']
-        //     );
-
            $validationRules=[
                 'fullname' => 'required',
                 'email' => 'required|email',
+                'message' => 'required',
             ];
 
             $validator = \Validator::make($request->all(),$validationRules);
