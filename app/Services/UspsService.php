@@ -73,9 +73,12 @@ class UspsService
                 return null;
             }
 
+            $countries = new \App\Libs\Countries;
+            $state = $countries->getStateByCode($result['state']);
+
             return [
-                'city'    => $result['city'],
-                'state'   => $result['state'],
+                'city'    => (STRING) ucwords(strtolower($result['city'])),
+                'state'   => $state,
                 'zipCode' => $result['ZIPCode'] ?? $zipCode,
             ];
 
