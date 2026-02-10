@@ -37,6 +37,7 @@ class InquiryController extends Controller
                 return response()->json($validator->errors()->all());
             }
 
+
             $forbiddenWods = ['OR', 'AND', 'XOR','sleep','sysdate','%','concat','union','select','insert','update','delete','drop','truncate','exec','declare','--','#'];
             $parts = preg_split('/[ ,;|]/', $request['message']);
 
@@ -64,6 +65,9 @@ class InquiryController extends Controller
             $context  = stream_context_create($options);
             $verify = file_get_contents($url, false, $context);
             $captcha_success=json_decode($verify);
+
+            if ($captcha_success->success == false)
+                return response()->json(array('message'=>$captcha_success->error-codes));
 
             //Mail::to(config('mail.from.address'))->queue(new InquiryEmail($data));
 
