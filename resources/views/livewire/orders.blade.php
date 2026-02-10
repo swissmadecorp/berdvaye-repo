@@ -167,7 +167,7 @@ x-init="focusSearchBox()"
     </div>
     @endif
 
-@push ('jquery')
+@section ('jquery')
 <script>
     $(document).ready( function() {
         $('.menu-btn').popupMenu({
@@ -204,5 +204,5 @@ x-init="focusSearchBox()"
         });
     })
     </script>
-@endpush
+@endsection
 </div>

@@ -263,7 +263,7 @@ if ($event.key === '=') {
     </script>
 @endscript
 
-@push ('jquery')
+@section ('jquery')
 <script>
     $(document).ready( function() {
         $(document).on("click", "#alert-border-1 button", function() {
@@ -318,6 +318,6 @@ if ($event.key === '=') {
         });
     })
     </script>
-@endpush
+@endsection
 
 </div>

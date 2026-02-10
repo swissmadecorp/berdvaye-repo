@@ -204,7 +204,7 @@ if ($event.key === '=') {
     </div>
     @endif
 
-@push ('jquery')
+@section ('jquery')
 <script>
     $(document).ready( function() {
         $(document).on('mouseenter', 'span.hide', function () {
@@ -266,5 +266,5 @@ if ($event.key === '=') {
 
 </script>
 
-@endpush
+@endsection
 </div>
