@@ -30,18 +30,24 @@ class UspsService
     {
         return Cache::remember('usps_access_token', 3500, function () {
             $response = $this->client->post('oauth2/v3/token', [
-                'form_params' => [
-                    'grant_type'    => 'client_credentials',
+                'headers' => [
+                    'Content-Type' => 'application/json', // Force exact header
+                    'Accept'       => 'application/json',
+                ],
+                // Use 'body' with manual json_encode to ensure no extra formatting
+                'body' => json_encode([
                     'client_id'     => $this->clientId,
                     'client_secret' => $this->clientSecret,
-                    'scope'         => 'addresses',
-                ],
-                'headers' => [
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                ],
+                    'grant_type'    => 'client_credentials',
+                ]),
             ]);
 
             $data = json_decode($response->getBody(), true);
+
+            if (!isset($data['access_token'])) {
+                throw new \Exception('Failed to obtain USPS access token: ' . ($data['error_description'] ?? 'Unknown Error'));
+            }
+
             return $data['access_token'];
         });
     }
@@ -63,12 +69,14 @@ class UspsService
                 ],
                 'headers' => [
                     'Authorization' => 'Bearer ' . $accessToken,
-                    'Accept'        => 'application/json',
+                    'Accept'         => 'application/json',
                 ],
             ]);
 
             $result = json_decode($response->getBody(), true);
 
+            // USPS v3 typically returns an object with city, state, ZIPCode directly
+            // if found, or an error object if not.
             return [
                 'city'    => $result['city'] ?? null,
                 'state'   => $result['state'] ?? null,
@@ -76,7 +84,8 @@ class UspsService
             ];
 
         } catch (RequestException $e) {
-            \Log::error('USPS API Error: ' . $e->getMessage());
+            $errorBody = $e->hasResponse() ? (string) $e->getResponse()->getBody() : $e->getMessage();
+            \Log::error('USPS API Error: ' . $errorBody);
             return null;
         }
     }

@@ -950,7 +950,7 @@ class InvoiceItem extends Component
             $szip = trim($this->customer['s_zip']);
             if (strlen($szip) == 5) {
                 $location = app(UspsService::class)->getCityState($szip);
-
+dd($location);
                 $this->selectedSCountry = 231;
                 $this->customer['s_city'] = $location['city'];
                 $this->selectedSState = $location['state'];
