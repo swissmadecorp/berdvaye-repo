@@ -47,6 +47,12 @@ class InquiryController extends Controller
                 }
             }
 
+            $message = explode(' ', $request['message']);
+
+            if (count($message) <= 3) {
+                return response()->json(['message' => 'Your message is too short. Please enter a more detailed message.']);
+            }
+
             $response = $request["g-recaptcha-response"];
             $url = 'https://www.google.com/recaptcha/api/siteverify';
             $data = array(
