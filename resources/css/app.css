@@ -84,12 +84,12 @@
 
 @layer components {
   .defaultContact-links a {
-    @apply transition ease-in-out duration-300 no-underline;
+    /* The ! ensures no-underline wins regardless of other styles */
+    @apply transition ease-in-out duration-300 !no-underline;
   }
 
   .defaultContact-links a:hover {
-    /* This explicitly kills the underline on hover */
-    @apply no-underline;
+    @apply !no-underline;
   }
 }
 
