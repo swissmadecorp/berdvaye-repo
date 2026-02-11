@@ -28,7 +28,7 @@
             </div>
           </div>
 
-          <div>
+          <div class="duration-300 transition ease-in-out">
             <div class="defaultContact-links">
               <h3>Chess Collection</h3>
               <ul>

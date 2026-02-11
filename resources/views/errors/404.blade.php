@@ -40,7 +40,6 @@
       <div class="container-fluid">
         <div class="row clearfix justify-content-center">
           <div class="flex justify-center items-center flex-col text-center px-4">
-            <hr>
 
 
                 <div class="box-main-404 flex justify-center items-center py-20">
@@ -66,7 +65,7 @@
                 <h3 class="text-cream-500">The page you're looking for cannot be found.</h3>
                 <p>If you typed the URL directly, please make sure the spelling is correct. If you clicked on a link to get here, the link is outdated.
                 </p>
-                <p>If you're not sure how you got here, <a href="/">go back</a> to the previous page or return to our <a href="/" class="btn btn-sm btn-primary">homepage</a>.</p>
+                <p>If you're not sure how you got here, got to the previous page or return to our <a href="/" class="text-red-400 hover:text-red-700 duration-300 transition ease-in-out">homepage</a>.</p>
           </div>
         </div>
       </div>
