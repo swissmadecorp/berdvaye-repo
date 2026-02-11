@@ -41,7 +41,7 @@
         <div class="row clearfix justify-content-center">
           <div class="flex justify-center items-center flex-col text-center px-4">
             <hr>
-            <h2>Page not found</h2>
+
 
                 <div class="box-main-404 flex justify-center items-center py-20">
                     <div class="outer-box w-[200px] h-[290px] shadow-[0px_0px_9px_#a09d9d] p-[10px] inline-block mr-[60px] -rotate-7">
