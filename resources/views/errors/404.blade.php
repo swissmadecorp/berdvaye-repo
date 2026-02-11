@@ -45,19 +45,19 @@
 
                 <div class="box-main-404 flex justify-center items-center py-20">
                     <div class="outer-box w-[200px] h-[290px] shadow-[0px_0px_9px_#a09d9d] p-[10px] inline-block mr-[60px] -rotate-7">
-                        <div class="inner-box w-full h-full bg-[#1e2337] flex items-center justify-center">
+                        <div class="inner-box w-full h-full bg-dark flex items-center justify-center">
                             <div class="text-[170px] text-white font-sans">4</div>
                         </div>
                     </div>
 
                     <div class="outer-box w-[200px] h-[290px] shadow-[0px_0px_9px_#a09d9d] p-[10px] inline-block mr-[60px] rotate-3">
-                        <div class="inner-box w-full h-full bg-[#1e2337] flex items-center justify-center">
+                        <div class="inner-box w-full h-full bg-dark flex items-center justify-center">
                             <div class="text-[170px] text-white font-sans">0</div>
                         </div>
                     </div>
 
                     <div class="outer-box w-[200px] h-[290px] shadow-[0px_0px_9px_#a09d9d] p-[10px] inline-block mr-[60px] rotate-[14deg]">
-                        <div class="inner-box w-full h-full bg-[#1e2337] flex items-center justify-center">
+                        <div class="inner-box w-full h-full bg-dark flex items-center justify-center">
                             <div class="text-[170px] text-white font-sans">4</div>
                         </div>
                     </div>

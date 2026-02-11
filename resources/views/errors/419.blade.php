@@ -43,7 +43,25 @@
             <hr>
             <h2>Page expired</h2>
 
-                <img src="/images/errors/419.jpg" style="max-width: 100%" />
+                    <div class="box-main-404 flex justify-center items-center py-20">
+                    <div class="outer-box w-[200px] h-[290px] shadow-[0px_0px_9px_#a09d9d] p-[10px] inline-block mr-[60px] -rotate-7">
+                        <div class="inner-box w-full h-full bg-dark flex items-center justify-center">
+                            <div class="text-[170px] text-white font-sans">4</div>
+                        </div>
+                    </div>
+
+                    <div class="outer-box w-[200px] h-[290px] shadow-[0px_0px_9px_#a09d9d] p-[10px] inline-block mr-[60px] rotate-3">
+                        <div class="inner-box w-full h-full bg-dark flex items-center justify-center">
+                            <div class="text-[170px] text-white font-sans">1</div>
+                        </div>
+                    </div>
+
+                    <div class="outer-box w-[200px] h-[290px] shadow-[0px_0px_9px_#a09d9d] p-[10px] inline-block mr-[60px] rotate-[14deg]">
+                        <div class="inner-box w-full h-full bg-dark flex items-center justify-center">
+                            <div class="text-[170px] text-white font-sans">9</div>
+                        </div>
+                    </div>
+                </div>
                 <h2 style="font-size: 40px;font-weight: bold">We're sorry.</h2>
                 <h3 class="text-cream-300">The page you're looking for is exired.</h3>
                 <p>If you typed the URL directly, please make sure the spelling is correct. If you clicked on a link to get here, the link is outdated.
