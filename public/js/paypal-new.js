@@ -41,73 +41,59 @@ const cardField = paypal.CardFields({
     onApprove: onApproveCallback,
     inputEvents: {
         onChange: (data) => {
-            const payNowButton = document.getElementById('paynow');
-            const formContainer = document.getElementById('card-form');
+            const paypalContainer = document.getElementById('paypal-button-container');
+            const submitButton = document.getElementById('card-field-submit-button');
 
-            // Logic to highlight/enable your "Pay Now" button as they type
+            // --- THE LOGIC TO DISABLE/HIDE THE PAYPAL BUTTON ---
+            // If any of the fields are NOT empty, we hide the PayPal button
+            // to force the user to finish with the Credit Card fields.
             const isAnyFieldNotEmpty =
                 !data.fields.number.isEmpty ||
                 !data.fields.cvv.isEmpty ||
                 !data.fields.expiry.isEmpty;
 
-            if (payNowButton) {
-                if (isAnyFieldNotEmpty) {
-                    // Force the button to appear by overriding any 'hidden' classes
-                    payNowButton.style.display = 'block';
-                    payNowButton.style.opacity = '1';
-                    payNowButton.disabled = false;
-                } else {
-                    // Hide the button again if the fields are cleared
-                    payNowButton.style.display = 'none';
-                    payNowButton.style.opacity = '0.5';
-                    payNowButton.disabled = true;
-                }
+            if (isAnyFieldNotEmpty) {
+                // Hide the PayPal button container
+                paypalContainer.style.display = 'none';
+                // Show/Enable your custom "Pay Now" button
+                submitButton.style.opacity = '1';
+                submitButton.disabled = false;
+            } else {
+                // Show the PayPal button container again if they clear the fields
+                paypalContainer.style.display = 'block';
+                submitButton.style.opacity = '0.5';
             }
 
-            // Update form validity class for optional styling
-            if (formContainer) {
-                formContainer.className = data.isFormValid ? 'valid' : 'invalid';
-            }
+            // Update form validity class for your CSS
+            const formContainer = document.getElementById('card-form');
+            formContainer.className = data.isFormValid ? 'valid' : 'invalid';
+        },
+        onFocus: () => {
+            // Optional: Hide PayPal button as soon as they click into a CC field
+            document.getElementById('paypal-button-container').style.display = 'none';
         }
     }
 });
 
+
 if (cardField.isEligible()) {
-    cardField.NumberField().render("#card-number-field-container");
-    cardField.CVVField().render("#card-cvv-field-container");
-    cardField.ExpiryField().render("#card-expiry-field-container");
+  // const nameField = cardField.NameField();
+  // nameField.render("#card-name-field-container");
 
-    // Add listener to your custom "Pay Now" button
-    const payNowBtn = document.getElementById("paynow");
-    if (payNowBtn) {
-        payNowBtn.addEventListener("click", async (event) => {
-            event.preventDefault();
+  cardField.NumberField().render("#card-number-field-container");
+  cardField.CVVField().render("#card-cvv-field-container");
+  cardField.ExpiryField().render("#card-expiry-field-container");
 
-            const state = await cardField.getState();
+  function handleChange(event) {
+    const input = event.target;
+    const errorInput = document.getElementById(input.id+'-error');
 
-            if (state.isFormValid) {
-                const overlay = document.getElementById('overlay');
-                if (overlay) {
-                    overlay.classList.remove('hidden');
-                    overlay.classList.add('flex');
-                }
+    errorInput.classList.add('hidden');
+    errorInput.classList.remove('blockitem');
 
-                // Submit the credit card transaction
-                cardField.submit({
-                    billingAddress: {
-                        addressLine1: document.getElementById("b_address1")?.value,
-                        countryCode: document.getElementById("card-billing-address-country-code")?.value,
-                        postalCode: document.getElementById("b_zip")?.value,
-                    }
-                });
-            } else {
-                // Display error message if form is incomplete
-                if (typeof resultMessage === 'function') {
-                    resultMessage("Please ensure all card details are entered correctly.");
-                }
-            }
-        });
-    }
+    input.classList.add('border');
+    input.classList.remove('border-danger');
+  }
 
   // Add click listener to submit button and call the submit function on the CardField component
  document.getElementById("paynow").addEventListener("click", async (event) => {
