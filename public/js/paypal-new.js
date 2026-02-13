@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (isAnyFieldNotEmpty) {
                         // User is typing: Enable the button fully
                         submitButton.classList.remove('hidden'); // Ensure it's visible
+                        submitButton.style.display = 'block'; // Force display block if inline styles interfere
                         submitButton.style.opacity = '1';
                         submitButton.disabled = false;
                     } else {
@@ -80,8 +81,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (cvvContainer) cardField.CVVField().render("#card-cvv-field-container");
         if (expiryContainer) cardField.ExpiryField().render("#card-expiry-field-container");
 
-        // 4. Attach Click Listener to "Pay Now" Button
+        // --- LAYOUT FIX: Move 'Pay Now' button right below the PayPal button ---
+        const paypalButtonContainer = document.getElementById("paypal-button-container");
         const payNowBtn = document.getElementById("paynow");
+
+        if (paypalButtonContainer && payNowBtn) {
+            // Move the button to immediately follow the PayPal button container
+            // This places it visually between the PayPal button and the Card Fields (assuming they follow)
+            paypalButtonContainer.insertAdjacentElement('afterend', payNowBtn);
+            payNowBtn.classList.remove('hidden');
+        }
+        // -------------------------------------------------------------------
+
+        // 4. Attach Click Listener to "Pay Now" Button
         if (payNowBtn) {
             payNowBtn.addEventListener("click", async (event) => {
                 event.preventDefault();
