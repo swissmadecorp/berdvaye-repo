@@ -376,7 +376,7 @@ class CartComponent extends Component
 
         if (is_numeric($customer['state']))
             $state = $customer['state'];
-        else $state = $countries->getStateIdByName($customer['state']);
+        else $state = $countries->getStateByCode($customer['state']);
 
         $tax = 0;$subtotal = 0;$total = 0;$orderstatus = 0;$totalWebprice=0;
 
