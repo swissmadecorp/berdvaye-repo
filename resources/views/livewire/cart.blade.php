@@ -228,7 +228,7 @@
                             <div class="pl-1 xm:pr-0">
                                 <button wire:ignore.self type="button" id="checkout" wire:click.prevent="goToNextStep" class="cursor-pointer w-full transition-colors duration-300 ease-in-out px-6 py-2 text-sm bg-darkred dark:text-cream rounded-full hover:bg-red-700">Checkout</button>
                                 <button wire:ignore.self type="button" id="paynow" wire:attrbibutes="disabled"
-                                    class="cursor-pointer w-full transition-colors duration-300 ease-in-out px-6 py-2 text-sm bg-darkred dark:text-cream rounded-full hover:bg-red-700 hidden">
+                                    class="p-3 cursor-pointer text-white w-full transition-colors duration-300 ease-in-out px-6 py-2 text-sm bg-darkred dark:text-cream rounded-full hover:bg-red-700 hidden">
                                         Pay
                                 </button>
                             </div>
