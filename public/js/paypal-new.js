@@ -34,43 +34,78 @@ paypal
     },
 };
 // Render each field after checking for eligibility
+
+// Configuration for Credit Card Fields
 const cardField = paypal.CardFields({
-  createOrder: createOrderCallback,
-  onApprove: onApproveCallback,
-  style: cardStyle,
-  inputEvents: {
-    onChange: (data) => {
-        formContainer.className = data.isFormValid ? 'valid' : 'invalid'
-    },
-    onInputSubmitRequest: (data) => {
-      console.debug(data)
+    createOrder: createOrderCallback,
+    onApprove: onApproveCallback,
+    inputEvents: {
+        onChange: (data) => {
+            const paypalContainer = document.getElementById('paypal-button-container');
+            const submitButton = document.getElementById('card-field-submit-button');
+
+            // --- THE LOGIC TO DISABLE/HIDE THE PAYPAL BUTTON ---
+            // If any of the fields are NOT empty, we hide the PayPal button
+            // to force the user to finish with the Credit Card fields.
+            const isAnyFieldNotEmpty =
+                !data.fields.number.isEmpty ||
+                !data.fields.cvv.isEmpty ||
+                !data.fields.expiry.isEmpty;
+
+            if (isAnyFieldNotEmpty) {
+                // Hide the PayPal button container
+                paypalContainer.style.display = 'none';
+                // Show/Enable your custom "Pay Now" button
+                submitButton.style.opacity = '1';
+                submitButton.disabled = false;
+            } else {
+                // Show the PayPal button container again if they clear the fields
+                paypalContainer.style.display = 'block';
+                submitButton.style.opacity = '0.5';
+            }
+
+            // Update form validity class for your CSS
+            const formContainer = document.getElementById('card-form');
+            formContainer.className = data.isFormValid ? 'valid' : 'invalid';
+        },
+        onFocus: () => {
+            // Optional: Hide PayPal button as soon as they click into a CC field
+            document.getElementById('paypal-button-container').style.display = 'none';
+        }
     }
-  }
 });
+
 
 if (cardField.isEligible()) {
   // const nameField = cardField.NameField();
   // nameField.render("#card-name-field-container");
 
-  const numberField = cardField.NumberField();
-  numberField.render("#card-number-field-container");
+  cardField.NumberField().render("#card-number-field-container");
+  cardField.CVVField().render("#card-cvv-field-container");
+  cardField.ExpiryField().render("#card-expiry-field-container");
 
-  const cvvField = cardField.CVVField();
-  cvvField.render("#card-cvv-field-container");
+  document.getElementById("card-field-submit-button").addEventListener("click", async (event) => {
+    event.preventDefault();
 
-  const expiryField = cardField.ExpiryField();
-  expiryField.render("#card-expiry-field-container");
+        // Check the internal state of the PayPal CardFields
+      const state = await cardField.getState();
 
-  function handleChange(event) {
-    const input = event.target;
-    const errorInput = document.getElementById(input.id+'-error');
+      if (state.isFormValid) {
+          document.getElementById('overlay').classList.remove('hidden');
+          document.getElementById('overlay').classList.add('flex');
 
-    errorInput.classList.add('hidden');
-    errorInput.classList.remove('blockitem');
-
-    input.classList.add('border');
-    input.classList.remove('border-danger');
-  }
+          cardField.submit({
+              billingAddress: {
+                  addressLine1: document.getElementById("b_address1")?.value,
+                  countryCode: document.getElementById("card-billing-address-country-code")?.value,
+                  postalCode: document.getElementById("b_zip")?.value,
+              }
+          });
+      } else {
+          // Use your own message instead of alert()
+          resultMessage("Please ensure all card details are entered correctly.");
+      }
+  });
 
   // Add click listener to submit button and call the submit function on the CardField component
  document.getElementById("paynow").addEventListener("click", async (event) => {
