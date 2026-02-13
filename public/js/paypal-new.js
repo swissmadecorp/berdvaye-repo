@@ -41,31 +41,34 @@ const cardField = paypal.CardFields({
     onApprove: onApproveCallback,
     inputEvents: {
         onChange: (data) => {
-            const submitButton = document.getElementById('card-field-submit-button');
+            const payNowButton = document.getElementById('paynow');
             const formContainer = document.getElementById('card-form');
 
-            // Logic to highlight/enable your custom button as they type
+            // Logic to highlight/enable your "Pay Now" button as they type
             const isAnyFieldNotEmpty =
                 !data.fields.number.isEmpty ||
                 !data.fields.cvv.isEmpty ||
                 !data.fields.expiry.isEmpty;
 
-            if (submitButton) {
+            if (payNowButton) {
                 if (isAnyFieldNotEmpty) {
-                    submitButton.style.opacity = '1';
-                    submitButton.disabled = false;
+                    // Force the button to appear by overriding any 'hidden' classes
+                    payNowButton.style.display = 'block';
+                    payNowButton.style.opacity = '1';
+                    payNowButton.disabled = false;
                 } else {
-                    submitButton.style.opacity = '0.5';
-                    submitButton.disabled = true;
+                    // Hide the button again if the fields are cleared
+                    payNowButton.style.display = 'none';
+                    payNowButton.style.opacity = '0.5';
+                    payNowButton.disabled = true;
                 }
             }
 
-            // Update form validity class for styling
+            // Update form validity class for optional styling
             if (formContainer) {
                 formContainer.className = data.isFormValid ? 'valid' : 'invalid';
             }
         }
-        // onFocus and onBlur removed as they are no longer needed for this layout
     }
 });
 
@@ -75,9 +78,9 @@ if (cardField.isEligible()) {
     cardField.ExpiryField().render("#card-expiry-field-container");
 
     // Add listener to your custom "Pay Now" button
-    const submitBtn = document.getElementById("card-field-submit-button");
-    if (submitBtn) {
-        submitBtn.addEventListener("click", async (event) => {
+    const payNowBtn = document.getElementById("paynow");
+    if (payNowBtn) {
+        payNowBtn.addEventListener("click", async (event) => {
             event.preventDefault();
 
             const state = await cardField.getState();
@@ -89,6 +92,7 @@ if (cardField.isEligible()) {
                     overlay.classList.add('flex');
                 }
 
+                // Submit the credit card transaction
                 cardField.submit({
                     billingAddress: {
                         addressLine1: document.getElementById("b_address1")?.value,
@@ -97,6 +101,7 @@ if (cardField.isEligible()) {
                     }
                 });
             } else {
+                // Display error message if form is incomplete
                 if (typeof resultMessage === 'function') {
                     resultMessage("Please ensure all card details are entered correctly.");
                 }
