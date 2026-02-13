@@ -220,7 +220,7 @@
                             </table>
 
 
-                            <div class="p-2 xm:mt-32 flex justify-between font-bold text-lg text-gray-500">
+                            <div class="p-2 flex justify-between font-bold text-lg text-gray-500">
                                 <span>Total</span>
                                 <span>{{$grandtotal}}</span>
                             </div>
