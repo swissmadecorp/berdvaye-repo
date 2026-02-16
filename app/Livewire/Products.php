@@ -198,6 +198,7 @@ class Products extends Component
                 ->orderBy($this->sortBy, $this->sortDirection)
                 ->get();
 
+dd($status);
                 return Excel::download(new ProductsExport($products), 'products.xlsx');
         } else {
             $products = Product::join('product_retails','product_retails.id','=','product_retail_id')
