@@ -177,7 +177,7 @@ class Products extends Component
 
         $sign = $this->onhand == 1 ? ">=" : "<=";
         $status = $this->status;
-
+dd($status);
         return Product::join('product_retails','product_retails.id','=','product_retail_id')
             ->when(strlen($searchTerm)>0, function($query) use ($searchTerm) {
                 $query->whereRaw($searchTerm);
@@ -195,7 +195,7 @@ class Products extends Component
         if (request()->routeIs('export.products')) {
 
             $products = $this->getProducts()->get();
-dd($products);
+
             return Excel::download(
                 new ProductsExport($products),
                 'products.xlsx'
