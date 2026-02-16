@@ -34,7 +34,7 @@ if ($event.key === '=') {
                 <ul class="absolute top-0 left-0 bg-gray-200 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200" aria-labelledby="dropdownglobalpricerButton">
                     <li>
                         <?php $queryString = http_build_query(request()->except('page')); ?>
-                        <button id="exportproducts-modal" onclick='window.open("/admin/products/export?{{$queryString}}", "_blank", "toolbar=no,scrollbars=yes,resizable=yes,top=0,left=500,width=600,height=800");' type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Export Products</button>
+                        <button id="exportproducts-modal" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Export Products</button>
                     </li>
                     <li>
                         <button id="process" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Unproduced Placks</button>
@@ -213,6 +213,11 @@ if ($event.key === '=') {
         }).on('mouseleave', 'span.hide', function () {
             $(this).css('opacity',0)
         })
+
+        $('#exportproducts-modal').on('click', function () {
+            let signinUrl =  "/admin/products/export?{{ $queryString }}";
+            window.open(signinUrl, "_blank", "toolbar=no,scrollbars=yes,resizable=yes,top=0,left=500,width=600,height=800");
+        });
 
         $('#process').on('click', function () {
             let signinUrl =  "products/sps/printmissingproducts";

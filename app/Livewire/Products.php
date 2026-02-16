@@ -190,17 +190,17 @@ class Products extends Component
             ->orderBy($this->sortBy, $this->sortDirection);
     }
 
-    public function mount()
+    public function exportProducts()
     {
-        if (request()->routeIs('export.products')) {
+        // if (request()->routeIs('export.products')) {
 
             $products = $this->getProducts()->get();
-
+dd($products);
             return Excel::download(
                 new ProductsExport($products),
                 'products.xlsx'
             );
-        }
+        // }
     }
 
     public function render()
