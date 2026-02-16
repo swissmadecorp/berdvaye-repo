@@ -123,7 +123,7 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     Route::get('/invoice-payments', InvoicePayments::class);
     Route::get('/invoices', Invoices::class);
     Route::get('/products', Products::class)->name('products');
-    Route::get('products/export', Products::class)->name('export.products');
+    // Route::get('products/export', Products::class)->name('export.products');
     Route::get('/customers', Customers::class);
     Route::get('/models', Models::class);
     Route::get('/dealers', Dealers::class);
@@ -140,7 +140,7 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     // Route::post('products/store', "App\Http\Controllers\ProductsController@store");
     // Route::post('products/{id?}/storeduplicate', "App\Http\Controllers\ProductsController@storeDuplicate");
     // Route::get('products/{id}/destroy', "App\Http\Controllers\ProductsController@destroy");
-    // Route::get('products/1/export', 'App\Http\Controllers\ProductsController@export'); // for some reason if I dont's specify 1, it doesn't work. I guess it's looking for a number. Something I have to fix in the future.
+    Route::get('products/1/export', 'App\Http\Controllers\ProductsController@export'); // for some reason if I dont's specify 1, it doesn't work. I guess it's looking for a number. Something I have to fix in the future.
 
     // Ajax Controller Calls
 

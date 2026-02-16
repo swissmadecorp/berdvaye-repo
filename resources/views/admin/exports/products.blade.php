@@ -16,11 +16,11 @@
     <!-- Begin Body -->
     @foreach($products as $product)
         <tr>
-            <td style="width: 166px">{{ $product->retail->model_name }}</td>
+            <td style="width: 166px">{{ $product->model_name }}</td>
             <td style="width: 84px">{{ $product->p_model }}</td>
             <td>{{ $product->p_qty }}</td>
             <td style="text-align: right">{{ $product->p_serial }}</td>
-            <td style="text-align: right;width: 75px">{{ $product->retail->p_retail }}</td>
+            <td style="text-align: right;width: 75px">{{ $product->p_retail }}</td>
             <td style="width: 110px">{{ $product->p_status <> 0 ? Status()->get($product->p_status) : '' }}</td>
         </tr>
     @endforeach

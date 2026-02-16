@@ -27,6 +27,13 @@ class ProductsController extends Controller
     }
 
     public function __invoke($page) {
+        $search = request('search', '');
+        $status = request('status', 0);
+        $onhand = request('onhand', 0);
+        $sortBy = request('sortBy', 'products.id');
+        $sortDirection = request('sortDirection', 'asc');
+
+        dd('asds');
         return view($page,['activePage' =>$page]);
     }
 
@@ -777,14 +784,16 @@ class ProductsController extends Controller
         PDF::Output('inventory.pdf', 'I');
     }
 
-    public function export() {
+
+    public function export(Request $request) {
         // $products = Product::whereHas('retail', function() {
 
         // });
         // foreach ($products as $product) {
         //     dd($product->retail->model_name);
         // }
-
+        $queryString = http_build_query(request()->except('page'));
+        dd($queryString);
         //return Excel::download(new ProductsExport, 'public/uploads/products.xlsx');
         $products = Product::join('product_retails', 'product_retails.id','=', 'products.product_retail_id')
                 ->selectRaw('model_name,product_retails.p_model, p_retail,p_qty,p_serial,image_location, p_status')

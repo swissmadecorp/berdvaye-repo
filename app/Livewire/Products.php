@@ -170,55 +170,39 @@ class Products extends Component
         $this->updatingSearch();
     }
 
-    public function getProducts()
+    public function render()
     {
+        // To add a textbox with a length counter just create 2 spans inside the inputbox
+        // and within the 1st span add class="absolute -ml-6 mt-2" and
+        //  within the 2nd span add x-text="wire.name.length"
         $columns = ['p_serial','products.id','products.p_model','model_name'];
         $searchTerm = $this->generateSearchQuery($this->search, $columns);
 
-        $sign = $this->onhand == 1 ? ">=" : "<=";
-        $status = $this->status;
+        if ($this->onhand==1)
+            $sign = ">=";
+        else $sign = "<=";
 
-        return Product::join('product_retails','product_retails.id','=','product_retail_id')
+        $status = $this->status;
+        $products = Product::join('product_retails','product_retails.id','=','product_retail_id')
             ->when(strlen($searchTerm)>0, function($query) use ($searchTerm) {
                 $query->whereRaw($searchTerm);
-            })
-            ->when($status > 0, function($query) use ($status) {
+            })->when($status > 0, function($query) use ($status) {
                 $query->where('p_status',$status);
             })
+
             ->withSum('retail','p_retail')
             ->where('p_qty', $sign , $this->onhand)
             ->orderBy($this->sortBy, $this->sortDirection);
-    }
 
-    public function exportProducts()
-    {
-        // if (request()->routeIs('export.products')) {
 
-            $products = $this->getProducts()->get();
-dd($products);
-            return Excel::download(
-                new ProductsExport($products),
-                'products.xlsx'
-            );
-        // }
-    }
+        $totalQty = $products->sum('p_qty');
 
-    public function render()
-    {
-        $productsQuery = $this->getProducts();
-
-        $this->sproducts = $productsQuery->get();
-
-        $totalQty = $this->sproducts->sum('p_qty');
+        $this->sproducts = $products->get();
         $totalCost = $this->sproducts->sum('retail_sum_p_retail');
 
-        $products = $productsQuery->paginate(10);
+        $products = $products->paginate(perPage: 10);
 
-        return view('livewire.products',[
-            "products"=>$products,
-            'totalCost'=>$totalCost,
-            'totalQty'=>$totalQty
-        ])
+        return view('livewire.products',["products"=>$products, 'totalCost' => $totalCost, 'totalQty' => $totalQty, 'pageName' => "Products"])
             ->layoutData(['pageName' => 'Products'])
             ->title("products");
     }
