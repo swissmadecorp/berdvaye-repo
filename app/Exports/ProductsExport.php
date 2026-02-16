@@ -57,7 +57,6 @@ class ProductsExport implements FromView, WithColumnFormatting, WithStyles, With
     }
 
     public function __construct($products) {
-        dd($products);
         $this->products = $products;
     }
 
