@@ -49,7 +49,7 @@ class ProductsExport implements FromView, WithColumnFormatting, WithStyles, With
         $drawing->setPath("assets/berdvaye-logo-pdf.jpg");
         $drawing->setHeight(40);
         $drawing->setCoordinates('A1');
-        
+
         $drawing->setOffsetX($drawing->getImageWidth());
         // $drawing->setOffsetX($offsetX);
 
@@ -57,6 +57,7 @@ class ProductsExport implements FromView, WithColumnFormatting, WithStyles, With
     }
 
     public function __construct($products) {
+        dd($products);
         $this->products = $products;
     }
 
@@ -71,7 +72,7 @@ class ProductsExport implements FromView, WithColumnFormatting, WithStyles, With
         // $spreadSheet = new Spreadsheet();
         // $this->workSheet = $spreadSheet->getActiveSheet();
         // dd(1);
-            
+
         // dd($f);
     }
 

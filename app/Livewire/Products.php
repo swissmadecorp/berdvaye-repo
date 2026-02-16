@@ -170,60 +170,55 @@ class Products extends Component
         $this->updatingSearch();
     }
 
-    public function render()
+    public function getProducts()
     {
-        // To add a textbox with a length counter just create 2 spans inside the inputbox
-        // and within the 1st span add class="absolute -ml-6 mt-2" and
-        //  within the 2nd span add x-text="wire.name.length"
-
         $columns = ['p_serial','products.id','products.p_model','model_name'];
         $searchTerm = $this->generateSearchQuery($this->search, $columns);
 
-        if ($this->onhand==1)
-            $sign = ">=";
-        else $sign = "<=";
-
+        $sign = $this->onhand == 1 ? ">=" : "<=";
         $status = $this->status;
 
+        return Product::join('product_retails','product_retails.id','=','product_retail_id')
+            ->when(strlen($searchTerm)>0, function($query) use ($searchTerm) {
+                $query->whereRaw($searchTerm);
+            })
+            ->when($status > 0, function($query) use ($status) {
+                $query->where('p_status',$status);
+            })
+            ->withSum('retail','p_retail')
+            ->where('p_qty', $sign , $this->onhand)
+            ->orderBy($this->sortBy, $this->sortDirection);
+    }
+
+    public function mount()
+    {
         if (request()->routeIs('export.products')) {
-            $products = Product::join('product_retails','product_retails.id','=','product_retail_id')
-                ->when(strlen($searchTerm)>0, function($query) use ($searchTerm) {
-                    $query->whereRaw($searchTerm);
-                })->when($status > 0, function($query) use ($status) {
-                    $query->where('p_status',$status);
-                })
 
-                ->withSum('retail','p_retail')
-                ->where('p_qty', $sign , $this->onhand)
-                ->orderBy($this->sortBy, $this->sortDirection)
-                ->get();
+            $products = $this->getProducts()->get();
 
-dd($status);
-                return Excel::download(new ProductsExport($products), 'products.xlsx');
-        } else {
-            $products = Product::join('product_retails','product_retails.id','=','product_retail_id')
-                ->when(strlen($searchTerm)>0, function($query) use ($searchTerm) {
-                    $query->whereRaw($searchTerm);
-                })->when($status > 0, function($query) use ($status) {
-                    $query->where('p_status',$status);
-                })
-
-                ->withSum('retail','p_retail')
-                ->where('p_qty', $sign , $this->onhand)
-                ->orderBy($this->sortBy, $this->sortDirection);
-
-
-            $totalQty = $products->sum('p_qty');
-
-            $this->sproducts = $products->get();
-            $totalCost = $this->sproducts->sum('retail_sum_p_retail');
-
-            $products = $products->paginate(perPage: 10);
-
-            return view('livewire.products',["products"=>$products, 'totalCost' => $totalCost, 'totalQty' => $totalQty, 'pageName' => "Products"])
-                ->layoutData(['pageName' => 'Products'])
-                ->title("products");
+            return Excel::download(
+                new ProductsExport($products),
+                'products.xlsx'
+            );
         }
+    }
+
+    public function render()
+    {
+        $productsQuery = $this->getProducts();
+
+        $this->sproducts = $productsQuery->get();
+
+        $totalQty = $this->sproducts->sum('p_qty');
+        $totalCost = $this->sproducts->sum('retail_sum_p_retail');
+
+        $products = $productsQuery->paginate(10);
+
+        return view('livewire.products',[
+            "products"=>$products,
+            'totalCost'=>$totalCost,
+            'totalQty'=>$totalQty
+        ]);
     }
 
 }

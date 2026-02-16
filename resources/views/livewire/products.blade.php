@@ -33,7 +33,7 @@ if ($event.key === '=') {
             <div id="dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
                 <ul class="absolute top-0 left-0 bg-gray-200 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200" aria-labelledby="dropdownglobalpricerButton">
                     <li>
-                        <button id="exportproducts-modal" onclick='window.location.href="{{ route('export.products') }}";' type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Export Products</button>
+                        <button id="exportproducts-modal" onclick="window.open('{{ route('export.products', request()->query()) }}', '_blank')" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Export Products</button>
                     </li>
                     <li>
                         <button id="process" type="button" class="text-left block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full">Unproduced Placks</button>
