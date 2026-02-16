@@ -432,7 +432,7 @@ class InvoiceItem extends Component
 
                             if ($this->customer['method'] == 'Invoice') {
                                 if ($product_id != 491) {
-                                    $product->p_status=8; // mark as sold
+                                    $product->p_status=3; // mark as sold
                                     $product->decrement('p_qty');
                                     $product->update();
                                 }
