@@ -195,7 +195,7 @@ class Products extends Component
         if (request()->routeIs('export.products')) {
 
             $products = $this->getProducts()->get();
-
+dd($products);
             return Excel::download(
                 new ProductsExport($products),
                 'products.xlsx'
@@ -218,7 +218,9 @@ class Products extends Component
             "products"=>$products,
             'totalCost'=>$totalCost,
             'totalQty'=>$totalQty
-        ]);
+        ])
+            ->layoutData(['pageName' => 'Products'])
+            ->title("products");
     }
 
 }
