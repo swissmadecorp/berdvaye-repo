@@ -792,14 +792,27 @@ class ProductsController extends Controller
         // foreach ($products as $product) {
         //     dd($product->retail->model_name);
         // }
-        $queryString = http_build_query(request()->except('page'));
-        dd($queryString);
+
+        $queryString = $request->all();
+        $status = $request['status'] ?? 0;
+        $onhand = $request['onhand'] ?? 0;
+        $sign = $onhand > 0 ? '>' : '=';
+
+        $products = Product::join('product_retails','product_retails.id','=','product_retail_id')
+            ->when($status > 0, function($query) use ($status) {
+                $query->where('p_status',$status);
+            })
+            ->withSum('retail','p_retail')
+            ->where('p_qty', $sign , $onhand)
+            ->get();
+
+
         //return Excel::download(new ProductsExport, 'public/uploads/products.xlsx');
-        $products = Product::join('product_retails', 'product_retails.id','=', 'products.product_retail_id')
-                ->selectRaw('model_name,product_retails.p_model, p_retail,p_qty,p_serial,image_location, p_status')
-                ->where('p_qty', '>', 0)
-                ->where('p_retail', '>', 0)
-                ->get();
+        // $products = Product::join('product_retails', 'product_retails.id','=', 'products.product_retail_id')
+        //         ->selectRaw('model_name,product_retails.p_model, p_retail,p_qty,p_serial,image_location, p_status')
+        //         ->where('p_qty', '>', 0)
+        //         ->where('p_retail', '>', 0)
+        //         ->get();
 
         return Excel::download(new ProductsExport($products), 'products.xlsx');
     }
