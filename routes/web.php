@@ -123,6 +123,7 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     Route::get('/orders', Orders::class);
     Route::get('/invoice-payments', InvoicePayments::class);
     Route::get('/invoices', Invoices::class);
+    Route::get('credentials', App\Livewire\Credentials::class);
     Route::get('/products', Products::class)->name('products');
     // Route::get('products/export', Products::class)->name('export.products');
     Route::get('/customers', Customers::class);
