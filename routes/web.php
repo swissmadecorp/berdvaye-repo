@@ -29,6 +29,7 @@ use App\Http\Controllers\DashboardController;
 use App\Livewire\Orders;
 use App\Livewire\Sculptures;
 use App\Livewire\ProductDetails;
+use App\Livewire\Credentials;
 use App\Livewire\InvoicePayments;
 use App\Livewire\Invoices;
 use App\Livewire\Products;
@@ -126,6 +127,7 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     // Route::get('products/export', Products::class)->name('export.products');
     Route::get('/customers', Customers::class);
     Route::get('/models', Models::class);
+    Route::get('/credentials', Credentials::class);
     Route::get('/dealers', Dealers::class);
 
   // subpage for the posts found at /admin/posts (app/views/admin/products.blade.php)
