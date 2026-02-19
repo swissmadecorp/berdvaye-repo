@@ -1,5 +1,6 @@
 <div class="p-4 relative min-h-screen">
     <!-- 1. CSS for UI State & Transitions -->
+    @role('user|superadmin')
     <style>
         [x-cloak] { display: none !important; }
         .tab-active-card {
@@ -67,7 +68,7 @@
         <!-- 4. Expanded Data Tables Section -->
         @if($activeTab)
         <div class="mt-6 px-6">
-            <div class="p-8 bg-white/90 backdrop-blur-lg border border-white shadow-2xl rounded-[50px] min-h-[450px]">
+            <div class="p-8 bg-white/90 backdrop-blur-lg border border-white shadow-2xl rounded-[50px] min-h-[450px] dark:bg-darkgray dark:text-white">
 
                 <!-- USER TABLE -->
                 @if($activeTab === 1)
@@ -418,4 +419,8 @@
         </div>
         @endif
     </div>
+    @else
+    <div class="backdrop-blur-lg bg-white/90 border-white dark:bg-darkgray flex items-center justify-center min-h-[450px] p-8 rounded shadow-2xl">
+        <h3 class="text-xl font-bold dark:text-white text-gray-700">You do not have permission to access this section.</h3>
+    @endif
 </div>
