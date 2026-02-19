@@ -223,15 +223,15 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <!-- <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> -->
-    <!--<script src="{{ asset('/js/bootstrap.min.js') }}"></script>-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
-    <script src="/js/customers/jquery.customer.js"></script>
-    <script src="/js/general.js"></script>
-    <script src="/js/popupMenu.jquery.js"></script>
-    <script src="/js/jquery-confirm/jquery-confirm.min.js"></script>
-    <script src="/js/jquery.autocomplete.min.js"></script>
+   <script src="//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+   <!-- <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> -->
+   <!--<script src="{{ asset('/js/bootstrap.min.js') }}"></script>-->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+   <script src="/js/customers/jquery.customer.js"></script>
+   <script src="/js/general.js"></script>
+   <script src="/js/popupMenu.jquery.js"></script>
+   <script src="/js/jquery-confirm/jquery-confirm.min.js"></script>
+   <script src="/js/jquery.autocomplete.min.js"></script>
    <script src="/js/editable-select/jquery-editable-select.js"></script>
    <script src="/js/jquery.mask.js" type="text/javascript"></script>
    <script src="/js/jquery.marquee.js" type="text/javascript"></script>
