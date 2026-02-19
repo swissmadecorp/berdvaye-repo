@@ -49,7 +49,7 @@ Route::get('getStateFromCountry', "App\Http\Controllers\CountriesController@getS
 Route::get('getStateByCountry', "App\Http\Controllers\CountriesController@getStateByCountry");
 Route::post('ajaxInquiry', "App\Http\Controllers\InquiryController@ajaxInquiry")->name('ajax.inquiry');
 
-Route::group(['middleware' => 'web'], function () {
+Route::group(['middleware' => 'web','throttle:60,1'], function () {
     Route::get('/google-merchant.xml', function () {
         $products = \App\Models\ProductRetail::where('is_active', true)->get();
 
