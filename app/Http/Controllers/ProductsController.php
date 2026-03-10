@@ -33,7 +33,7 @@ class ProductsController extends Controller
         $sortBy = request('sortBy', 'products.id');
         $sortDirection = request('sortDirection', 'asc');
 
-        dd('asds');
+        // dd('asds');
         return view($page,['activePage' =>$page]);
     }
 
