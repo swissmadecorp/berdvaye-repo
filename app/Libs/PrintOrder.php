@@ -541,7 +541,8 @@ Invoiced
                     </tr>
                     <?php } ?>
                 </tbody>
-                <?php if ($orderStatus!='Repair' && $output!='packing_slip') { ?>
+
+                <?php if ($output!='packing_slip') { ?>
                 <tfoot>
                     <tr>
                         <td style="text-align: right" colspan="<?= $nonComm ?>"><b>Sub Total</b></td>
@@ -576,23 +577,7 @@ Invoiced
                         <?php } ?>
                     </tr>
                     <?php } ?>
-                    <?php if  ($creditPaid) { ?>
-                    <tr>
-                    <td style="text-align: right" colspan="<?= $nonComm ?>"><b>Credit Applied</b></td>
-                        <td style="text-align: right;color:green">-<?= number_format($creditPaid,2) ?></td>
-                    </tr>
-                    <?php } ?>
-                    <?php if ($totalPaid != 0 && $totalPaid != $order->total ) { ?>
-                    <tr>
-                        <td style="text-align: right" colspan="<?= $nonComm ?>"><b>Partial Payment</b></td>
-                        <td style="text-align: right;color:green">-<?= number_format($totalPaid,2) ?></td>
-                    </tr>
-                    <?php } elseif ($output != 'commercial') { ?>
-                        <tr>
-                        <td style="text-align: right" colspan="<?= $nonComm ?>"><b>Total</b></td>
-                        <td style="text-align: right">$<?= number_format($grandTotal,2)?></td>
-                    </tr>
-                    <?php } ?>
+
                     <?php if ($totalPaid != 0) { ?>
                     <tr>
                         <td style="text-align: right" colspan="<?= $nonComm ?>"><b>Grand Total</b></td>
