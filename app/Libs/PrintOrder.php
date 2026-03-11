@@ -460,9 +460,9 @@ Invoiced
                                 <?php } ?>
                             <?php } else { ?>
                                 <th width="80" style="<?= $borderColor ?>">Image</th>
-                                <th width="432" style="<?= $borderColor ?>">Product Name</th>
+                                <th width="427" style="<?= $borderColor ?>">Product Name</th>
                                 <th width="80" style="<?= $borderColor ?>">Serial #</th>
-                                <th width="45" style="<?= $borderColor ?>">Qty</th>
+                                <th width="50" style="<?= $borderColor ?>">Qty</th>
                             <?php } ?>
                         <?php } else { ?>
                             <th width="340" style="<?= $borderColor ?>">Product Name</th>
@@ -518,7 +518,7 @@ Invoiced
                                 <td width="80" style="<?=$borderLeft . $borderBottom?>;color:#fff;text-align:center">
                                 <img style="width: 50px" src="<?= $product->image() ? $product->image() : 'images/no-image.jpg' ?>" />
                                 </td>
-                                <td style="<?=$borderLeft . $borderBottom?>;" width="432"><?= $title?><?= $foundProduct ? '<br><br><span style="color:red">(Returned)</span>' : '' ?></td>
+                                <td style="<?=$borderLeft . $borderBottom?>;" width="427"><?= $title?><?= $foundProduct ? '<br><br><span style="color:red">(Returned)</span>' : '' ?></td>
                                 <td style="<?=$borderLeft . $borderBottom?>" width="80">
                                     <?php if ($product->pivot->serial=='NONE' || $product->pivot->serial=='N/A')
                                             echo 'None';
@@ -526,7 +526,7 @@ Invoiced
                                             echo $product->pivot->serial ? $product->pivot->serial . ' / ' . $product->retail->heighest_serial : '' ;
                                     ?>
                                 </td>
-                                <td style="<?=$borderRight . $borderLeft . $borderBottom?>;text-align:center" width="45"><?= $foundProduct ? '-' : '' ?><?=$product->pivot->qty ?></td>
+                                <td style="<?=$borderRight . $borderLeft . $borderBottom?>;text-align:center" width="50"><?= $foundProduct ? '-' : '' ?><?=$product->pivot->qty ?></td>
                             <?php } ?>
                         <?php } else { ?>
                             <?php if ($product->p_model != "MISC") {?>
@@ -575,6 +575,23 @@ Invoiced
                             </td>
                             <td style="text-align: right"><?=  number_format($order->freight,2)?></td>
                         <?php } ?>
+                    </tr>
+                    <?php } ?>
+                    <?php if  ($creditPaid) { ?>
+                    <tr>
+                    <td style="text-align: right" colspan="<?= $nonComm ?>"><b>Credit Applied</b></td>
+                        <td style="text-align: right;color:green">-<?= number_format($creditPaid,2) ?></td>
+                    </tr>
+                    <?php } ?>
+                    <?php if ($totalPaid != 0 && $totalPaid != $order->total ) { ?>
+                    <tr>
+                        <td style="text-align: right" colspan="<?= $nonComm ?>"><b>Partial Payment</b></td>
+                        <td style="text-align: right;color:green">-<?= number_format($totalPaid,2) ?></td>
+                    </tr>
+                    <?php } elseif ($output != 'commercial') { ?>
+                        <tr>
+                        <td style="text-align: right" colspan="<?= $nonComm ?>"><b>Total</b></td>
+                        <td style="text-align: right">$<?= number_format($grandTotal,2)?></td>
                     </tr>
                     <?php } ?>
 
