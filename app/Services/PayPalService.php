@@ -229,19 +229,20 @@ class PayPalService
      * @param array $items Array of items with name, quantity, and unit_amount
      * @param string $note Custom note on the invoice
      */
-    public function createAndSendInvoice(array $customerData, array $items, string $note = "Thank you!", $invoiceId = null)
+    public function createAndSendInvoice(array $customerData, array $items, string $note = "Thank you!")
     {
-        $draftResult = $this->createInvoiceDraft($customerData, $items, $note, $invoiceId);
-        $json = $draftResult['jsonResponse'] ?? [];
-
         // 1. Try to find the ID directly
-        //$invoiceId = $json['id'] ?? null;
+        $invoiceId = $customerData['invoice_id'] ?? null;
+        dd($invoiceId);
+        $draftResult = $this->createInvoiceDraft($customerData, $items, $note);
+        $json = $draftResult['jsonResponse'] ?? [];
 
         // 2. Fallback: Extract from 'href' (Handles the structure you provided in debug)
         if (!$invoiceId && isset($json['href'])) {
             $invoiceId = basename($json['href']);
         }
 
+        dd($invoiceId);
         // 3. If we found an ID, move from Draft to SENT
         if ($invoiceId) {
             return $this->sendInvoice($invoiceId);
@@ -255,7 +256,7 @@ class PayPalService
     /**
      * Step 1: Create an invoice in DRAFT status.
      */
-    public function createInvoiceDraft(array $customerData, array $items, string $note, string $invoiceId = null)
+    public function createInvoiceDraft(array $customerData, array $items, string $note)
     {
         $accessToken = $this->generateAccessToken();
         $client = new Client(['verify' => false]);

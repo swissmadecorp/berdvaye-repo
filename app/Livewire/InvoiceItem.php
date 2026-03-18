@@ -552,6 +552,7 @@ class InvoiceItem extends Component
     {
         // Example: Getting data from your cart or a specific order
         $customerData = [
+            'invoice_id' => $this->invoiceId,
             'firstname' => $this->customer['b_firstname'],
             'lastname'  => $this->customer['b_lastname'],
             'email'     => 'edba1970@yahoo.com' //$this->customer['b_email'],
@@ -569,7 +570,7 @@ class InvoiceItem extends Component
         }
 
         try {
-            $response = $paypalService->createAndSendInvoice($customerData, $items, $this->invoiceId);
+            $response = $paypalService->createAndSendInvoice($customerData, $items);
 
             // Check for 201 Created or 202 Accepted (Sent)
             if ($response['httpStatusCode'] === 201 || $response['httpStatusCode'] === 202) {
