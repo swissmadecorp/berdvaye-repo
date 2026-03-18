@@ -221,4 +221,94 @@ class PayPalService
         return $this->handleResponse($response);
     }
 
+       // --- Invoicing Methods ---
+
+    /**
+     * High-level method to create a draft and send it immediately to the customer.
+     * * @param array $customerData ['firstname', 'lastname', 'email']
+     * @param array $items Array of items with name, quantity, and unit_amount
+     * @param string $note Custom note on the invoice
+     */
+    public function createAndSendInvoice(array $customerData, array $items, string $note = "Thank you for your business!")
+    {
+        // 1. Create the Draft
+        $draftResult = $this->createInvoiceDraft($customerData, $items, $note);
+
+        if (isset($draftResult['jsonResponse']['id'])) {
+            $invoiceId = $draftResult['jsonResponse']['id'];
+            // 2. Send the Invoice (this triggers the email)
+            return $this->sendInvoice($invoiceId);
+        }
+
+        return $draftResult;
+    }
+
+    /**
+     * Step 1: Create an invoice in DRAFT status.
+     */
+    public function createInvoiceDraft(array $customerData, array $items, string $note)
+    {
+        $accessToken = $this->generateAccessToken();
+        $client = new Client(['verify' => false]);
+
+        $payload = [
+            "detail" => [
+                "currency_code" => "USD",
+                "note" => $note,
+                "term" => "Due on receipt",
+                // Provide your logo URL here (must be HTTPS)
+                "logo_url" => "https://berdvaye/assets/berdvaye-black-logo.png"
+            ],
+            "invoicer" => [
+                "name" => [
+                    "given_name" => "Berd Vaye Inc."
+                ],
+                "email_address" => "info@berdvaye.com",
+                // Address is omitted here so it won't show on the invoice
+            ],
+            "primary_recipients" => [
+                [
+                    "billing_info" => [
+                        "name" => [
+                            "given_name" => $customerData['firstname'],
+                            "surname" => $customerData['lastname']
+                        ],
+                        "email_address" => $customerData['email']
+                    ]
+                ]
+            ],
+            "items" => $items
+        ];
+
+        $response = $client->post($this->payPalURL . "/v2/invoicing/invoices", [
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Authorization' => "Bearer $accessToken"
+            ],
+            'json' => $payload
+        ]);
+
+        return $this->handleResponse($response);
+    }
+
+    /**
+     * Step 2: Send the draft invoice to the customer via email.
+     */
+    public function sendInvoice(string $invoiceId)
+    {
+        $accessToken = $this->generateAccessToken();
+        $client = new Client(['verify' => false]);
+
+        $response = $client->post($this->payPalURL . "/v2/invoicing/invoices/{$invoiceId}/send", [
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Authorization' => "Bearer $accessToken"
+            ],
+            'json' => [
+                "send_to_recipient" => true
+            ]
+        ]);
+
+        return $this->handleResponse($response);
+    }
 }
