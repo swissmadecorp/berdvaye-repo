@@ -262,7 +262,7 @@ class PayPalService
 
         $payload = [
             "detail" => [
-                "invoice_number" => $invoiceId == null ? "INV-" . time() : $invoiceId, // Unique invoice number
+                "invoice_number" => $invoiceId == null ? "BV-" . time() : $invoiceId, // Unique invoice number
                 "currency_code" => "USD",
                 "note" => $note,
                 "term" => "Due on receipt",
