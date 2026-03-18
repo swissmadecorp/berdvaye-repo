@@ -229,17 +229,26 @@ class PayPalService
      * @param array $items Array of items with name, quantity, and unit_amount
      * @param string $note Custom note on the invoice
      */
-    public function createAndSendInvoice(array $customerData, array $items, string $note = "Thank you for your business!")
+    public function createAndSendInvoice(array $customerData, array $items, string $note = "Thank you!")
     {
-        // 1. Create the Draft
         $draftResult = $this->createInvoiceDraft($customerData, $items, $note);
+        $json = $draftResult['jsonResponse'] ?? [];
 
-        if (isset($draftResult['jsonResponse']['id'])) {
-            $invoiceId = $draftResult['jsonResponse']['id'];
-            // 2. Send the Invoice (this triggers the email)
+        // 1. Try to find the ID directly
+        $invoiceId = $json['id'] ?? null;
+
+        // 2. Fallback: Extract from 'href' (Handles the structure you provided in debug)
+        if (!$invoiceId && isset($json['href'])) {
+            $invoiceId = basename($json['href']);
+        }
+
+        // 3. If we found an ID, move from Draft to SENT
+        if ($invoiceId) {
             return $this->sendInvoice($invoiceId);
         }
 
+        // If we reach here, Step 2 was never triggered.
+        // We return the draft result so you can debug why the ID extraction failed.
         return $draftResult;
     }
 
