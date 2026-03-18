@@ -569,7 +569,7 @@ class InvoiceItem extends Component
         }
 
         try {
-            $response = $paypalService->createAndSendInvoice($customerData, $items);
+            $response = $paypalService->createAndSendInvoice($customerData, $items, $this->invoiceId);
 
             // Check for 201 Created or 202 Accepted (Sent)
             if ($response['httpStatusCode'] === 201 || $response['httpStatusCode'] === 202) {

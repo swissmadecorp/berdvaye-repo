@@ -229,13 +229,13 @@ class PayPalService
      * @param array $items Array of items with name, quantity, and unit_amount
      * @param string $note Custom note on the invoice
      */
-    public function createAndSendInvoice(array $customerData, array $items, string $note = "Thank you!")
+    public function createAndSendInvoice(array $customerData, array $items, string $note = "Thank you!", $invoiceId = null)
     {
-        $draftResult = $this->createInvoiceDraft($customerData, $items, $note);
+        $draftResult = $this->createInvoiceDraft($customerData, $items, $note, $invoiceId);
         $json = $draftResult['jsonResponse'] ?? [];
 
         // 1. Try to find the ID directly
-        $invoiceId = $json['id'] ?? null;
+        //$invoiceId = $json['id'] ?? null;
 
         // 2. Fallback: Extract from 'href' (Handles the structure you provided in debug)
         if (!$invoiceId && isset($json['href'])) {
@@ -255,18 +255,19 @@ class PayPalService
     /**
      * Step 1: Create an invoice in DRAFT status.
      */
-    public function createInvoiceDraft(array $customerData, array $items, string $note)
+    public function createInvoiceDraft(array $customerData, array $items, string $note, string $invoiceId = null)
     {
         $accessToken = $this->generateAccessToken();
         $client = new Client(['verify' => false]);
 
         $payload = [
             "detail" => [
+                "invoice_number" => $invoiceId ?? "INV-" . time(), // Unique invoice number
                 "currency_code" => "USD",
                 "note" => $note,
                 "term" => "Due on receipt",
                 // Provide your logo URL here (must be HTTPS)
-                "logo_url" => "https://berdvaye/assets/berdvaye-black-logo.png"
+                "logo_url" => "https://berdvaye.com/assets/berdvaye-black-logo.png"
             ],
             "invoicer" => [
                 "name" => [
