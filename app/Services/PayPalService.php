@@ -233,7 +233,7 @@ class PayPalService
     {
         // 1. Try to find the ID directly
         $invoiceId = $customerData['invoice_id'] ?? null;
-        dd($invoiceId);
+
         $draftResult = $this->createInvoiceDraft($customerData, $items, $note);
         $json = $draftResult['jsonResponse'] ?? [];
 
@@ -242,7 +242,6 @@ class PayPalService
             $invoiceId = basename($json['href']);
         }
 
-        dd($invoiceId);
         // 3. If we found an ID, move from Draft to SENT
         if ($invoiceId) {
             return $this->sendInvoice($invoiceId);
@@ -263,7 +262,7 @@ class PayPalService
 
         $payload = [
             "detail" => [
-                "invoice_number" => $invoiceId ?? "INV-" . time(), // Unique invoice number
+                "invoice_number" => $invoiceId == null ? "INV-" . time() : $invoiceId, // Unique invoice number
                 "currency_code" => "USD",
                 "note" => $note,
                 "term" => "Due on receipt",
