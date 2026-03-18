@@ -349,8 +349,8 @@
                             <button wire:click="TransferToInvoice()" type="button" class="text-white mt-4 bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Make Invoice</button>
                             @endif
 
-                            <button type="button" id="print-invoice" class="float-right text-white mt-4 bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Send Invoice</button>
-                            <button type="button" id="print-invoice" class="float-right text-white mt-4 bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Print Invoice</button>
+                            <button type="button" wire:click="sendInvoice()" id="send-invoice" class="float-right text-white mt-4 bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Print Invoice</button>
+                            <button type="button" id="print-invoice" class="float-right text-white mt-4 bg-darkred mr-2 hover:bg-red-500 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Send Invoice</button>
 
                         </div>
                         @else
