@@ -18,6 +18,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\WithPagination;
 use App\Services\UspsService;
+use App\Services\PayPalService;
 use App\Models\Credit;
 use App\Models\Returns;
 use App\Models\OrderReturn;
@@ -547,45 +548,39 @@ class InvoiceItem extends Component
         }
     }
 
-    public function sendInvoice(PayPalService $paypalService) {
-        // 1. Prepare Customer Data
+    public function sendInvoiceToCustomer(PayPalService $paypalService)
+    {
+        // Example: Getting data from your cart or a specific order
         $customerData = [
-            'firstname' => 'John',
-            'lastname'  => 'Doe',
-            'email'     => 'edba1970@yahoo.com'
+            'firstname' => $this->customer['firstname'],
+            'lastname'  => $this->customer['lastname'],
+            'email'     => $this->customer['email'],
         ];
 
-        // 2. Prepare Items (Line Items)
-        $items = [
-            [
-                'name' => 'Cylinder Shape Citizen Artwork',
-                'quantity' => 3,
-                'unit_amount' => [
-                    'currency_code' => 'USD',
-                    'value' => '350.00' // Must be a string with 2 decimal places
-                ]
-            ],
-            [
-                'name' => 'Artwork hours and shipping in',
+        $items = [];
+        foreach (\App\Models\Cart::products() as $product) {
+            $items[] = [
+                'name' => $product['model_name'],
                 'quantity' => 1,
                 'unit_amount' => [
                     'currency_code' => 'USD',
-                    'value' => '150.00' // Must be a string with 2 decimal places
+                    'value' => number_format($product['price'], 2, '.', '')
                 ]
-            ],
-            [
-                'name' => 'Service Fee',
-                'quantity' => 1,
-                'unit_amount' => [
-                    'currency_code' => 'USD',
-                    'value' => '46.00'
-                ]
-            ]
-        ];
+            ];
+        }
 
-        // 3. Call the Service
-        $result = $paypalService->createAndSendInvoice($customerData, $items, "Please pay this invoice for your custom order.");
+        try {
+            $response = $paypalService->createAndSendInvoice($customerData, $items);
 
+            // Check for 201 Created or 202 Accepted (Sent)
+            if ($response['httpStatusCode'] === 201 || $response['httpStatusCode'] === 202) {
+                session()->flash('success', 'Invoice sent successfully!');
+            } else {
+                session()->flash('error', 'PayPal error: ' . json_encode($response['jsonResponse']));
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error sending invoice: ' . $e->getMessage());
+        }
     }
 
     protected function returnBackToInvoice($returnBackToInvoiceItems) {
