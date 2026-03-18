@@ -547,6 +547,47 @@ class InvoiceItem extends Component
         }
     }
 
+    public function sendInvoice(PayPalService $paypalService) {
+        // 1. Prepare Customer Data
+        $customerData = [
+            'firstname' => 'John',
+            'lastname'  => 'Doe',
+            'email'     => 'edba1970@yahoo.com'
+        ];
+
+        // 2. Prepare Items (Line Items)
+        $items = [
+            [
+                'name' => 'Cylinder Shape Citizen Artwork',
+                'quantity' => 3,
+                'unit_amount' => [
+                    'currency_code' => 'USD',
+                    'value' => '350.00' // Must be a string with 2 decimal places
+                ]
+            ],
+            [
+                'name' => 'Artwork hours and shipping in',
+                'quantity' => 1,
+                'unit_amount' => [
+                    'currency_code' => 'USD',
+                    'value' => '150.00' // Must be a string with 2 decimal places
+                ]
+            ],
+            [
+                'name' => 'Service Fee',
+                'quantity' => 1,
+                'unit_amount' => [
+                    'currency_code' => 'USD',
+                    'value' => '46.00'
+                ]
+            ]
+        ];
+
+        // 3. Call the Service
+        $result = $paypalService->createAndSendInvoice($customerData, $items, "Please pay this invoice for your custom order.");
+
+    }
+
     protected function returnBackToInvoice($returnBackToInvoiceItems) {
         $return = OrderReturn::where('order_id', $this->invoiceId)->get();
         $invoice = $this->invoice;
