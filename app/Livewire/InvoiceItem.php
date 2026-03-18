@@ -548,20 +548,19 @@ class InvoiceItem extends Component
         }
     }
 
-    public function sendInvoiceToCustomer(PayPalService $paypalService)
+    public function sendInvoice(PayPalService $paypalService)
     {
         // Example: Getting data from your cart or a specific order
         $customerData = [
-            'firstname' => $this->customer['firstname'],
-            'lastname'  => $this->customer['lastname'],
-            'email'     => $this->customer['email'],
+            'firstname' => $this->customer['b_firstname'],
+            'lastname'  => $this->customer['b_lastname'],
+            'email'     => 'edba1970@yahoo.com' //$this->customer['b_email'],
         ];
 
-        $items = [];
-        foreach (\App\Models\Cart::products() as $product) {
+        foreach ($this->items as $product) {
             $items[] = [
-                'name' => $product['model_name'],
-                'quantity' => 1,
+                'name' => $product['product_name'],
+                'quantity' => $product['qty'],
                 'unit_amount' => [
                     'currency_code' => 'USD',
                     'value' => number_format($product['price'], 2, '.', '')

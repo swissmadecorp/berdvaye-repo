@@ -233,7 +233,7 @@ class PayPalService
     {
         // 1. Create the Draft
         $draftResult = $this->createInvoiceDraft($customerData, $items, $note);
-dd($draftResult); // Debug the draft creation response
+
         if (isset($draftResult['jsonResponse']['id'])) {
             $invoiceId = $draftResult['jsonResponse']['id'];
             // 2. Send the Invoice (this triggers the email)
