@@ -231,11 +231,11 @@ class PayPalService
      */
     public function createAndSendInvoice(array $customerData, array $items, string $note = "Thank you!")
     {
-        // 1. Try to find the ID directly
-        $invoiceId = $customerData['invoice_id'] ?? null;
-
         $draftResult = $this->createInvoiceDraft($customerData, $items, $note);
         $json = $draftResult['jsonResponse'] ?? [];
+
+        // 1. Try to find the ID directly
+        $invoiceId = $json['id'] ?? null;
 
         // 2. Fallback: Extract from 'href' (Handles the structure you provided in debug)
         if (!$invoiceId && isset($json['href'])) {
@@ -262,7 +262,7 @@ class PayPalService
 
         $payload = [
             "detail" => [
-                "invoice_number" => $invoiceId == null ? "BV-" . time() : $invoiceId, // Unique invoice number
+                "invoice_number" => $invoiceId ?? "INV-" . time(), // Unique invoice number
                 "currency_code" => "USD",
                 "note" => $note,
                 "term" => "Due on receipt",
