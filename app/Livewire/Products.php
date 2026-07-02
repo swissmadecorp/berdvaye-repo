@@ -183,7 +183,7 @@ class Products extends Component
         else $sign = "<=";
 
         $status = $this->status;
-        $products = Product::join('product_retails','product_retails.id','=','product_retail_id')
+                $products = Product::join('product_retails','product_retails.id','=','product_retail_id')
             ->when(strlen($searchTerm)>0, function($query) use ($searchTerm) {
                 $query->whereRaw($searchTerm);
             })->when($status > 0, function($query) use ($status) {

@@ -795,7 +795,7 @@ class ProductsController extends Controller
 
         $queryString = $request->all();
         $status = $request['status'] ?? 0;
-        $onhand = $request['onhand'] ?? 0;
+        $onhand = 1; //$request['onhand'] ?? 0;
         $sign = $onhand > 0 ? '>' : '=';
 
         $products = Product::join('product_retails','product_retails.id','=','product_retail_id')
@@ -803,7 +803,7 @@ class ProductsController extends Controller
                 $query->where('p_status',$status);
             })
             ->withSum('retail','p_retail')
-            ->where('p_qty', $sign , $onhand)
+            ->where('p_qty', '=' , $onhand)
             ->get();
 
 
