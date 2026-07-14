@@ -241,9 +241,9 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     Route::resource('roles', 'App\Http\Controllers\RolesController');
     Route::resource('permissions', 'App\Http\Controllers\PermissionsController');
 
-    // Route::get('reports', 'App\Http\Controllers\ReportsController@index');
-    // Route::get('reports/print/{param?}/{date?}', 'App\Http\Controllers\ReportsController@printSales');
-    // Route::get('reports/printsales/{param?}/{date?}/{company?}', 'App\Http\Controllers\ReportsController@printSales1');
+    Route::get('reports', 'App\Http\Controllers\ReportsController@index');
+    Route::get('reports/print/{param?}/{date?}', 'App\Http\Controllers\ReportsController@printSales');
+    Route::get('reports/printsales/{param?}/{date?}/{company?}', 'App\Http\Controllers\ReportsController@printSales1');
 
     // Route::get('reports/printUnpaid/{criteria?}', 'App\Http\Controllers\ReportsController@printUnpaid');
     // Route::get('reports/printmemos', 'App\Http\Controllers\ReportsController@printMemos');
