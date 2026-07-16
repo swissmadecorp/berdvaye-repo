@@ -85,6 +85,11 @@ class Reports extends Component
         $this->resetPage();
     }
 
+    public function loadInvoice(int $id): void
+    {
+        $this->dispatch('load-invoice', $id);
+    }
+
     public function sort(string $column): void
     {
         if (! array_key_exists($column, self::SORTABLE_COLUMNS)) {

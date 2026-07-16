@@ -1,4 +1,6 @@
 <div class="space-y-5">
+    <livewire:invoice-item />
+
     <div wire:loading.delay class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/35" wire:target="setTab,search,dateFrom,dateTo,customerId,resetFilters,sort,gotoPage,nextPage,previousPage">
         <div class="rounded-full bg-white p-3 shadow-xl dark:bg-gray-800">
             <svg class="h-7 w-7 animate-spin text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -202,7 +204,10 @@
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex justify-end gap-2">
-                                    <a href="/admin/orders/{{ $order->id }}" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">View</a>
+                                    <button type="button" wire:click="loadInvoice({{ $order->id }})"
+                                        class="editinvoice rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+                                        View
+                                    </button>
                                     <a href="/admin/orders/{{ $order->id }}/print" target="_blank" title="Print {{ $activeTab === 'memo' ? 'memo' : 'invoice' }}"
                                         class="rounded-lg border border-gray-300 p-1.5 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
                                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
