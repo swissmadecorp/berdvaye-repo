@@ -620,4 +620,160 @@ class ReportsController extends Controller
 
     }
 
+    public function printItemizedOutstanding($isMemo = 0)
+    {
+        $isMemo = (int) $isMemo === 1;
+        $documentLabel = $isMemo ? 'Memo' : 'Invoice';
+        $title = $isMemo ? 'Itemized Outstanding Memos Report' : 'Itemized Unpaid Invoices Report';
+
+        $orders = Order::with(['products', 'payments', 'orderReturns', 'customers'])
+            ->where('status', 0)
+            ->when(
+                $isMemo,
+                fn ($query) => $query->where('method', 'On Memo'),
+                fn ($query) => $query->whereNotIn('method', ['On Memo', 'On Hold', 'Repair'])
+            )
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($order) {
+                $paymentTotal = (float) $order->payments->sum('amount');
+                $returnTotal = (float) $order->orderReturns->sum(
+                    fn ($return) => (float) $return->pivot->amount * (int) $return->pivot->qty
+                );
+
+                $order->report_payment_total = $paymentTotal;
+                $order->report_return_total = $returnTotal;
+                $order->report_credit_total = $paymentTotal + $returnTotal;
+                $order->report_balance = (float) $order->total - $order->report_credit_total;
+
+                return $order;
+            })
+            ->filter(fn ($order) => $order->report_balance > 0.005)
+            ->values();
+
+        $itemCount = $orders->sum(fn ($order) => $order->products->sum(fn ($product) => max(0, (int) $product->pivot->qty)));
+        $grandBalance = $orders->sum('report_balance');
+
+        $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+        $this->initializePDF($pdf, 'Berd Vaye - '.$title, 'L');
+
+        ob_start();
+        ?>
+        <style>
+            h1 { font-size: 18px; text-align: center; color: #202020; }
+            .muted { color: #666666; font-size: 9px; }
+            .summary { border: 1px solid #d7a13b; background-color: #fffaf0; }
+            .group-header { background-color: #f7e8bf; border: 1px solid #d7a13b; font-size: 10px; font-weight: bold; }
+            .items { border: 1px solid #d6d6d6; }
+            .items th { background-color: #eeeeee; border: 1px solid #d6d6d6; font-weight: bold; }
+            .items td { border-bottom: 1px solid #dddddd; }
+            .totals td { background-color: #fafafa; border-top: 1px solid #cccccc; }
+            .balance { color: #a86700; font-weight: bold; }
+            .grand-total { border: 1px solid #d7a13b; background-color: #fff7e4; font-weight: bold; }
+        </style>
+
+        <h1><?= strtoupper(e($title)) ?></h1>
+        <div class="muted" style="text-align:center;">As of <?= date('F j, Y') ?></div>
+        <br>
+        <table class="summary" cellpadding="6">
+            <tr>
+                <td width="33%" align="center"><b><?= $orders->count() ?></b><br><span class="muted">Outstanding <?= e($documentLabel) ?>s</span></td>
+                <td width="33%" align="center"><b><?= $itemCount ?></b><br><span class="muted">Items</span></td>
+                <td width="34%" align="center"><b>$<?= number_format($grandBalance, 2) ?></b><br><span class="muted">Grand Outstanding Balance</span></td>
+            </tr>
+        </table>
+        <br>
+
+        <?php foreach ($orders as $order):
+            $customerName = $order->b_company;
+            if (!$customerName) {
+                $customerName = trim($order->b_firstname.' '.$order->b_lastname);
+            }
+            if (!$customerName) {
+                $customerName = $order->s_company ?: trim($order->s_firstname.' '.$order->s_lastname);
+            }
+        ?>
+            <table nobr="true" cellpadding="0">
+                <tr><td>
+            <table class="items" cellpadding="4">
+                <thead>
+                    <tr class="group-header">
+                        <th colspan="6">
+                            <?= strtoupper(e($documentLabel)) ?> #<?= $order->id ?>
+                            &nbsp; | &nbsp; <?= e($customerName ?: 'Unknown customer') ?>
+                            &nbsp; | &nbsp; Date: <?= $order->created_at->format('M j, Y') ?>
+                            &nbsp; | &nbsp; PO: <?= e($order->po ?: '-') ?>
+                            &nbsp; | &nbsp; Balance: $<?= number_format($order->report_balance, 2) ?>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th width="30%">Item / Description</th>
+                        <th width="16%">Model</th>
+                        <th width="16%">Serial #</th>
+                        <th width="8%" align="center">Qty</th>
+                        <th width="15%" align="right">Unit Price</th>
+                        <th width="15%" align="right">Line Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($order->products->isEmpty()): ?>
+                        <tr><td colspan="6" class="muted">No item rows are attached to this <?= strtolower(e($documentLabel)) ?>.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($order->products as $product):
+                            $quantity = (int) $product->pivot->qty;
+                            $unitPrice = (float) $product->pivot->price;
+                            $lineTotal = $unitPrice * $quantity;
+                            $description = $product->pivot->product_name
+                                ?: trim(($product->p_title ?? '').' '.($product->p_reference ?? ''));
+                            $model = $product->pivot->model ?: $product->p_model;
+                            $serial = $product->pivot->serial ?: $product->p_serial;
+                        ?>
+                            <tr>
+                                <td width="30%"><?= e($description ?: 'Product #'.$product->id) ?></td>
+                                <td width="16%"><?= e($model ?: '-') ?></td>
+                                <td width="16%"><?= e($serial ?: '-') ?></td>
+                                <td width="8%" align="center"><?= $quantity ?></td>
+                                <td width="15%" align="right">$<?= number_format($unitPrice, 2) ?></td>
+                                <td width="15%" align="right">$<?= number_format($lineTotal, 2) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+            <table class="totals" cellpadding="5">
+                <tr>
+                    <td width="52%" class="muted">
+                        Payments: $<?= number_format($order->report_payment_total, 2) ?>
+                        &nbsp;&nbsp; Returns/Credits: $<?= number_format($order->report_return_total, 2) ?>
+                    </td>
+                    <td width="16%" align="right"><b>Original Total</b><br>$<?= number_format($order->total, 2) ?></td>
+                    <td width="16%" align="right"><b>Payments/Credits</b><br>($<?= number_format($order->report_credit_total, 2) ?>)</td>
+                    <td width="16%" align="right" class="balance"><b>Balance</b><br>$<?= number_format($order->report_balance, 2) ?></td>
+                </tr>
+            </table>
+                </td></tr>
+            </table>
+            <br>
+        <?php endforeach; ?>
+
+        <?php if ($orders->isEmpty()): ?>
+            <table cellpadding="12"><tr><td align="center">No outstanding <?= strtolower(e($documentLabel)) ?>s were found.</td></tr></table>
+        <?php endif; ?>
+
+        <table class="grand-total" cellpadding="7">
+            <tr>
+                <td width="25%" align="center">Documents: <?= $orders->count() ?></td>
+                <td width="25%" align="center">Items: <?= $itemCount ?></td>
+                <td width="50%" align="right">Grand Outstanding Balance: $<?= number_format($grandBalance, 2) ?></td>
+            </tr>
+        </table>
+        <div class="muted" style="text-align:center;">Only outstanding <?= strtolower(e($documentLabel)) ?>s with a remaining balance are included.</div>
+        <?php
+        $html = ob_get_clean();
+
+        PDF::WriteHTML($html, true, false, false, false, '');
+        $filename = $isMemo ? 'itemized-outstanding-memos.pdf' : 'itemized-unpaid-invoices.pdf';
+        PDF::Output($filename, 'I');
+    }
+
 }

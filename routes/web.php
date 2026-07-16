@@ -245,6 +245,9 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     Route::get('reports/print-unpaid/{isMemo}', 'App\Http\Controllers\ReportsController@printUnpaid')
         ->where('isMemo', '[01]')
         ->name('reports.print-unpaid');
+    Route::get('reports/print-itemized/{isMemo}', 'App\Http\Controllers\ReportsController@printItemizedOutstanding')
+        ->where('isMemo', '[01]')
+        ->name('reports.print-itemized');
     Route::get('reports/print/{param?}/{date?}', 'App\Http\Controllers\ReportsController@printSales');
     Route::get('reports/printsales/{param?}/{date?}/{company?}', 'App\Http\Controllers\ReportsController@printSales1');
 

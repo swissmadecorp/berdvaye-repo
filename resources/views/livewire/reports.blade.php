@@ -16,21 +16,45 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Only records with a remaining balance are included.</p>
         </div>
 
-        <div class="flex flex-wrap gap-3">
-            <a href="{{ route('reports.print-unpaid', ['isMemo' => 1]) }}" target="_blank"
+        <div class="relative" x-data="{ printMenuOpen: false }" @keydown.escape.window="printMenuOpen = false">
+            <button type="button" @click="printMenuOpen = !printMenuOpen" :aria-expanded="printMenuOpen"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-amber-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
                 <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829a3 3 0 0 0-3 3v1.5a3 3 0 0 0 3 3h10.56a3 3 0 0 0 3-3v-1.5a3 3 0 0 0-3-3M6.72 17.579h10.56M7.5 13.829V3.75h9v10.079M8.25 6.75h7.5" />
                 </svg>
-                Print On Memo
-            </a>
-            <a href="{{ route('reports.print-unpaid', ['isMemo' => 0]) }}" target="_blank"
-                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-amber-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
-                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829a3 3 0 0 0-3 3v1.5a3 3 0 0 0 3 3h10.56a3 3 0 0 0 3-3v-1.5a3 3 0 0 0-3-3M6.72 17.579h10.56M7.5 13.829V3.75h9v10.079M8.25 6.75h7.5" />
+                Print Reports
+                <svg class="h-4 w-4 transition-transform" :class="printMenuOpen && 'rotate-180'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                 </svg>
-                Print Invoices
-            </a>
+            </button>
+
+            <div x-cloak x-show="printMenuOpen" x-transition @click.outside="printMenuOpen = false"
+                class="absolute right-0 z-30 mt-2 w-64 overflow-hidden rounded-lg border border-gray-200 bg-white py-2 shadow-xl dark:border-gray-600 dark:bg-gray-700">
+                <div class="px-4 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-300">Summary reports</div>
+                <a href="{{ route('reports.print-unpaid', ['isMemo' => 1]) }}" target="_blank" @click="printMenuOpen = false"
+                    class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-800 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829a3 3 0 0 0-3 3v1.5a3 3 0 0 0 3 3h10.56a3 3 0 0 0 3-3v-1.5a3 3 0 0 0-3-3M7.5 13.829V3.75h9v10.079" /></svg>
+                    Unpaid Memos
+                </a>
+                <a href="{{ route('reports.print-unpaid', ['isMemo' => 0]) }}" target="_blank" @click="printMenuOpen = false"
+                    class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-800 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829a3 3 0 0 0-3 3v1.5a3 3 0 0 0 3 3h10.56a3 3 0 0 0 3-3v-1.5a3 3 0 0 0-3-3M7.5 13.829V3.75h9v10.079" /></svg>
+                    Unpaid Invoices
+                </a>
+
+                <div class="my-2 border-t border-gray-200 dark:border-gray-600"></div>
+                <div class="px-4 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-300">Itemized reports</div>
+                <a href="{{ route('reports.print-itemized', ['isMemo' => 1]) }}" target="_blank" @click="printMenuOpen = false"
+                    class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-800 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829a3 3 0 0 0-3 3v1.5a3 3 0 0 0 3 3h10.56a3 3 0 0 0 3-3v-1.5a3 3 0 0 0-3-3M7.5 13.829V3.75h9v10.079" /></svg>
+                    Itemized Memos
+                </a>
+                <a href="{{ route('reports.print-itemized', ['isMemo' => 0]) }}" target="_blank" @click="printMenuOpen = false"
+                    class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-800 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829a3 3 0 0 0-3 3v1.5a3 3 0 0 0 3 3h10.56a3 3 0 0 0 3-3v-1.5a3 3 0 0 0-3-3M7.5 13.829V3.75h9v10.079" /></svg>
+                    Itemized Invoices
+                </a>
+            </div>
         </div>
     </section>
 
