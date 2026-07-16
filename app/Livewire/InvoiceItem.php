@@ -294,12 +294,12 @@ class InvoiceItem extends Component
     }
 
     public function TransferToInvoice() {
-        dd('asdf');
+        // dd('asdf');
         $this->memoTransfer = true;
         $this->customer['method'] = "Invoice";
         $this->customer['po'] = "FROM MEMO";
 
-        $this->saveInvoice();
+        // $this->saveInvoice();
         // $this->clearFields();
     }
 
