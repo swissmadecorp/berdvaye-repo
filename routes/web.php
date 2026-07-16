@@ -35,7 +35,7 @@ use App\Livewire\Invoices;
 use App\Livewire\Products;
 use App\Livewire\Customers;
 use App\Livewire\Dealers;
-// use App\Livewire\Reports;
+use App\Livewire\Reports;
 use App\Livewire\Models;
 
 //Route::any('{query}',function() { return redirect('/'); })->where('query', '.*');
@@ -241,7 +241,10 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     Route::resource('roles', 'App\Http\Controllers\RolesController');
     Route::resource('permissions', 'App\Http\Controllers\PermissionsController');
 
-    Route::get('reports', 'App\Http\Controllers\ReportsController@index');
+    Route::get('reports', Reports::class)->name('reports');
+    Route::get('reports/print-unpaid/{isMemo}', 'App\Http\Controllers\ReportsController@printUnpaid')
+        ->where('isMemo', '[01]')
+        ->name('reports.print-unpaid');
     Route::get('reports/print/{param?}/{date?}', 'App\Http\Controllers\ReportsController@printSales');
     Route::get('reports/printsales/{param?}/{date?}/{company?}', 'App\Http\Controllers\ReportsController@printSales1');
 

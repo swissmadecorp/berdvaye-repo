@@ -163,6 +163,14 @@
                <span class="ms-3">Payments</span>
             </a>
          </li>
+         <li>
+            <a href="/admin/reports" class="p-0.5 flex items-center rounded-lg {{ request()->routeIs('reports') ? 'bg-amber-500/20 text-amber-300' : 'text-gray-300 hover:text-gray-100 dark:text-white dark:hover:bg-gray-700' }} group">
+               <svg class="h-5 w-5 flex-shrink-0 transition duration-75 {{ request()->routeIs('reports') ? 'text-amber-400' : 'text-gray-400 group-hover:text-gray-300 dark:group-hover:text-white' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.5h3v7.5H3v-7.5Zm7.5-6h3V21h-3V7.5Zm7.5-4.5h3v18h-3V3Z" />
+               </svg>
+               <span class="ms-3">Reports</span>
+            </a>
+         </li>
          <li class="border-t border-gray-400 dark:border-gray-700">
             <a href="/admin/dealers" class="p-0.5 flex items-center text-gray-300 rounded-lg dark:text-white hover:text-gray-100 dark:hover:bg-gray-700 group">
                <svg class="flex-shrink-0 w-5 h-5 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-300 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
