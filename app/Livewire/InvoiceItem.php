@@ -295,6 +295,10 @@ class InvoiceItem extends Component
 
     public function TransferToInvoice() {
         // dd('asdf');
+        $this->items = collect($this->items)
+            ->where('qty', '>', 0)
+            ->values();
+
         $this->memoTransfer = true;
         $this->customer['method'] = "Invoice";
         $this->customer['po'] = "FROM MEMO";
@@ -387,6 +391,8 @@ class InvoiceItem extends Component
 
                 $order = Order::create($this->customer);
                 $order->customers()->attach($customer->id);
+
+                $this->invoice->update(['status' => 2]);
             }
 
             $product_ids=array();
@@ -472,9 +478,9 @@ class InvoiceItem extends Component
                             }
                             $product->update();
                         } elseif ($this->invoice->status == 0) { // open invoice/memo
+                            $product->p_status=0;
                             if ($qty == 0) {
                                 if ($method == "Invoice") {
-                                    $product->p_status=0;
                                     if ($qty == 0)
                                         $product->increment('p_qty');
                                 }
@@ -786,10 +792,10 @@ class InvoiceItem extends Component
 
     #[Computed]
     public function productImages() {
-        $directory = base_path().'/public/images/gallery/thumbnail';
+        $directory = public_path('images/gallery/thumbnail');
 
         if (!is_dir($directory)) {
-            exit('Invalid diretory path');
+            return [];
         }
 
         $files = array();
@@ -1156,7 +1162,7 @@ class InvoiceItem extends Component
 
         $arr = $this->items->get($index);
 
-        if ($arr['op_id'])
+        if ($arr['op_id'] && !$this->memoTransfer)
             LivewireAlert::title('')
                 ->text('Are you sure you want to remove ' . $arr['product_name'] . ' ('. $arr['serial'] .') from invoice?')
                 ->asConfirm()
@@ -1175,6 +1181,6 @@ class InvoiceItem extends Component
 
     public function render()
     {
-        return view('livewire.invoice-item', ['items' => $this->items, 'paginatedItems' => $this->paginateItems()]);
+        return view('livewire.invoice-item', ['items' => $this->items]);
     }
 }
