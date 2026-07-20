@@ -391,11 +391,10 @@ class InvoiceItem extends Component
 
                 $order = Order::create($this->customer);
                 $order->customers()->attach($customer->id);
-
-                $this->invoice->update(['status' => 2]);
             }
 
             $product_ids=array();
+            $transferredMemoItemIds = [];
 
             foreach ($this->items as $index => $item) {
                 $product_id = $item['id'];
@@ -436,6 +435,10 @@ class InvoiceItem extends Component
                             ];
 
                             $order->products()->attach($product->id, $product_array);
+
+                            if ($this->memoTransfer && !empty($item['op_id'])) {
+                                $transferredMemoItemIds[] = $item['op_id'];
+                            }
 
                             if ($this->customer['method'] == 'Invoice') {
                                 if ($product_id != 491) {
@@ -509,6 +512,10 @@ class InvoiceItem extends Component
 
                     }
                 }
+            }
+
+            if ($this->memoTransfer) {
+                $this->updateOriginalMemoAfterTransfer($transferredMemoItemIds);
             }
 
             // If there is only 1 or item's quantity were set to 0 item in the collection, that means there are no items left
@@ -702,6 +709,35 @@ class InvoiceItem extends Component
         return $this->items->every(function ($item) {
             return empty($item['qty']) || $item['qty'] == 0;
         });
+    }
+
+    protected function updateOriginalMemoAfterTransfer(array $transferredMemoItemIds): void
+    {
+        if (!$this->invoiceId || !$this->invoice) {
+            return;
+        }
+
+        if (!empty($transferredMemoItemIds)) {
+            \DB::table('order_product')
+                ->where('order_id', $this->invoiceId)
+                ->whereIn('id', $transferredMemoItemIds)
+                ->delete();
+        }
+
+        $subtotal = (float) \DB::table('order_product')
+            ->where('order_id', $this->invoiceId)
+            ->selectRaw('COALESCE(SUM(price * qty), 0) AS subtotal')
+            ->value('subtotal');
+
+        $tax = (float) ($this->invoice->taxable ?? 0);
+        $freight = (float) ($this->invoice->freight ?? 0);
+        $discount = (float) ($this->invoice->discount ?? 0);
+        $total = $subtotal + ($subtotal * ($tax / 100)) + $freight - $discount;
+
+        $this->invoice->update([
+            'subtotal' => $subtotal,
+            'total' => number_format($total, 2, '.', ''),
+        ]);
     }
 
     #[On('create-invoice')]

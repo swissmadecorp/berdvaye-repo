@@ -351,7 +351,7 @@
                             <button wire:click="saveInvoice()" type="button" class="text-white mt-4 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">{{$buttonText}}</button>
                             @endrole
                             @if (isset($customer['method']) && $customer['method'] == "On Memo")
-                            <button wire:click="TransferToInvoice()" type="button" class="text-white mt-4 bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Make Invoice</button>
+                            <button wire:click="TransferToInvoice()" x-on:click="scrollInvoiceToTop()" type="button" class="text-white mt-4 bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Make Invoice</button>
                             @endif
 
                             @role('superadmin|administrator')
@@ -534,6 +534,10 @@
             var mainPath = "{{route('ajax.customer')}}";
             var img_selection;
 
+            window.scrollInvoiceToTop = function() {
+                $('#slideover-invoice').stop(true).animate({ scrollTop: 0 }, 900);
+            }
+
             function Slider() {
                 //debugger
                 $('body').toggleClass('overflow-hidden')
@@ -548,10 +552,12 @@
                     if (productTabButton) {
                         productTabButton.click();
                     }
-                } else
+                } else {
+                    scrollInvoiceToTop();
                     setTimeout(() => {
                         $('#created_at').focus();
                     }, "400");
+                }
             }
 
             $('.creditAmount').marquee({
