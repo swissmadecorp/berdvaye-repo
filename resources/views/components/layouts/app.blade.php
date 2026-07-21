@@ -390,5 +390,6 @@ src="https://www.facebook.com/tr?id=2264134867419924&ev=PageView&noscript=1"
 });
 </script>
 <script>window.$zoho=window.$zoho || {};$zoho.salesiq=$zoho.salesiq||{ready:function(){}}</script><script id="zsiqscript" src="https://salesiq.zohopublic.com/widget?wc=siqd59a939ceebbb806d1ec7837113020dcba195e898df1547e95ad2a18cb9c130f" defer></script>
+@include('partials.visitor-monitor')
 </body>
 </html>

@@ -211,6 +211,14 @@
             </a>
          </li> -->
 
+         <li class="border-t border-gray-400 dark:border-gray-700">
+            <a href="/admin/visitor-monitor" class="p-0.5 flex items-center rounded-lg {{ request()->routeIs('visitor-monitor') ? 'bg-amber-500/20 text-amber-300' : 'text-gray-300 hover:text-gray-100 dark:text-white dark:hover:bg-gray-700' }} group">
+               <svg class="h-5 w-5 flex-shrink-0 {{ request()->routeIs('visitor-monitor') ? 'text-amber-400' : 'text-gray-400 group-hover:text-gray-300' }}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5Zm0 11.5c-2.05 0-3.85-.97-5-2.48.03-1.66 3.33-2.57 5-2.57 1.66 0 4.97.91 5 2.57-1.15 1.51-2.95 2.48-5 2.48Z"/>
+               </svg>
+               <span class="ms-3">Visitor Monitor</span>
+            </a>
+         </li>
       </ul>
    </div>
 </aside>

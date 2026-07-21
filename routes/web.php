@@ -37,11 +37,18 @@ use App\Livewire\Customers;
 use App\Livewire\Dealers;
 use App\Livewire\Reports;
 use App\Livewire\Models;
+use App\Livewire\VisitorMonitor;
+use App\Http\Controllers\VisitorTrackingController;
 
 //Route::any('{query}',function() { return redirect('/'); })->where('query', '.*');
 
 //Route::auth();
 Auth::routes();
+
+Route::prefix('visitor-monitor')->name('visitor-monitor.')->group(function () {
+    Route::post('heartbeat', [VisitorTrackingController::class, 'heartbeat'])->name('heartbeat');
+    Route::post('leave', [VisitorTrackingController::class, 'leave'])->name('leave');
+});
 
 Route::get('ajaxgooglemarkers','App\Http\Controllers\GoogleMarkersController@ajaxGoogleMarkers')->name('google.maker');
 Route::get('ajaxgetbygooglemarker','App\Http\Controllers\GoogleMarkersController@ajaxGetByGoogleMarker')->name("get.google.maker");
@@ -130,6 +137,7 @@ Route::group(['prefix' => 'admin', 'middleware'=>['auth']], function()
     Route::get('/models', Models::class);
     Route::get('/credentials', Credentials::class);
     Route::get('/dealers', Dealers::class);
+    Route::get('/visitor-monitor', VisitorMonitor::class)->name('visitor-monitor');
 
   // subpage for the posts found at /admin/posts (app/views/admin/products.blade.php)
     Route::resource('productretail', "App\Http\Controllers\ProductRetailController");
