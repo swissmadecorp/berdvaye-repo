@@ -288,7 +288,7 @@
             </div>
 
             @if($knownCustomers->hasPages())
-                <div class="mt-6">
+                <div class="visitor-monitor-pagination mt-6">
                     {{ $knownCustomers->links() }}
                 </div>
             @endif
@@ -360,7 +360,7 @@
             </div>
 
             @if($returningVisitors->hasPages())
-                <div class="mt-6">
+                <div class="visitor-monitor-pagination mt-6">
                     {{ $returningVisitors->links() }}
                 </div>
             @endif
@@ -434,7 +434,7 @@
             </div>
 
             @if($totalVisits->hasPages())
-                <div class="mt-6">
+                <div class="visitor-monitor-pagination mt-6">
                     {{ $totalVisits->links() }}
                 </div>
             @endif
