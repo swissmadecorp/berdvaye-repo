@@ -3,9 +3,11 @@
         <button
             type="button"
             @click="currentTab = 'active'"
-            :class="currentTab === 'active' ? 'border-blue-300 ring-2 ring-blue-200' : 'border-blue-100'"
-            class="rounded-3xl bg-blue-50 p-5 text-left shadow-sm transition"
+            :aria-pressed="currentTab === 'active'"
+            :class="currentTab === 'active' ? 'border-blue-600 ring-4 ring-blue-200 shadow-lg' : 'border-blue-100 hover:border-blue-300'"
+            class="relative rounded-3xl border-2 bg-blue-50 p-5 text-left shadow-sm transition"
         >
+            <span x-show="currentTab === 'active'" x-cloak class="absolute right-4 top-4 rounded-full bg-blue-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Viewing</span>
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Active Now</p>
             <p class="mt-3 text-3xl font-semibold text-blue-950">{{ $stats['active_visitors'] }}</p>
             <p class="mt-2 text-sm text-blue-700">Visitors currently browsing your site.</p>
@@ -13,9 +15,11 @@
         <button
             type="button"
             @click="currentTab = 'known'"
-            :class="currentTab === 'known' ? 'border-emerald-300 ring-2 ring-emerald-200' : 'border-emerald-100'"
-            class="rounded-3xl bg-emerald-50 p-5 text-left shadow-sm transition"
+            :aria-pressed="currentTab === 'known'"
+            :class="currentTab === 'known' ? 'border-emerald-600 ring-4 ring-emerald-200 shadow-lg' : 'border-emerald-100 hover:border-emerald-300'"
+            class="relative rounded-3xl border-2 bg-emerald-50 p-5 text-left shadow-sm transition"
         >
+            <span x-show="currentTab === 'known'" x-cloak class="absolute right-4 top-4 rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Viewing</span>
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">Known Customers</p>
             <p class="mt-3 text-3xl font-semibold text-emerald-950">{{ $stats['known_visitors'] }}</p>
             <p class="mt-2 text-sm text-emerald-700">Visitors identified through live chat.</p>
@@ -23,9 +27,11 @@
         <button
             type="button"
             @click="currentTab = 'returning'"
-            :class="currentTab === 'returning' ? 'border-amber-300 ring-2 ring-amber-200' : 'border-amber-100'"
-            class="rounded-3xl bg-amber-50 p-5 text-left shadow-sm transition"
+            :aria-pressed="currentTab === 'returning'"
+            :class="currentTab === 'returning' ? 'border-amber-600 ring-4 ring-amber-200 shadow-lg' : 'border-amber-100 hover:border-amber-300'"
+            class="relative rounded-3xl border-2 bg-amber-50 p-5 text-left shadow-sm transition"
         >
+            <span x-show="currentTab === 'returning'" x-cloak class="absolute right-4 top-4 rounded-full bg-amber-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Viewing</span>
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">Returning Visitors</p>
             <p class="mt-3 text-3xl font-semibold text-amber-950">{{ $stats['returning_visitors'] }}</p>
             <p class="mt-2 text-sm text-amber-700">Browsers that have come back more than once.</p>
@@ -33,9 +39,11 @@
         <button
             type="button"
             @click="currentTab = 'total'"
-            :class="currentTab === 'total' ? 'border-gray-300 ring-2 ring-gray-200' : 'border-gray-200'"
-            class="rounded-3xl bg-white p-5 text-left shadow-sm transition"
+            :aria-pressed="currentTab === 'total'"
+            :class="currentTab === 'total' ? 'border-gray-700 ring-4 ring-gray-200 shadow-lg' : 'border-gray-200 hover:border-gray-400'"
+            class="relative rounded-3xl border-2 bg-white p-5 text-left shadow-sm transition"
         >
+            <span x-show="currentTab === 'total'" x-cloak class="absolute right-4 top-4 rounded-full bg-gray-800 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Viewing</span>
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">Total Visits</p>
             <p class="mt-3 text-3xl font-semibold text-gray-950">{{ $stats['total_visits'] }}</p>
             <p class="mt-2 text-sm text-gray-600">Saved visit history even after people leave.</p>
@@ -44,7 +52,8 @@
 
     <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
         <div>
-            <h2 class="text-2xl font-semibold text-gray-900">Visitor Activity</h2>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">Currently viewing</p>
+            <h2 class="mt-1 text-2xl font-semibold text-gray-900" x-text="({ active: 'Active Visitors', known: 'Known Customers', returning: 'Returning Visitors', total: 'Total Visits' })[currentTab]"></h2>
             <p class="mt-1 text-sm text-gray-500">Choose one of the summary cards above to change what you are viewing.</p>
         </div>
 
@@ -432,4 +441,3 @@
         </div>
     </div>
 </div>
-
