@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VisitorProfile extends Model
 {
+    public function getConnectionName()
+    {
+        return config('database.default') === 'mysql'
+            ? 'visitor_monitor'
+            : parent::getConnectionName();
+    }
+
     protected $fillable = [
         'visitor_key',
         'display_name',
@@ -34,4 +41,3 @@ class VisitorProfile extends Model
         return $this->hasMany(VisitorSession::class)->orderByDesc('started_at');
     }
 }
-

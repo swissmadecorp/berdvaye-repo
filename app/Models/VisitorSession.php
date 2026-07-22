@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VisitorSession extends Model
 {
+    public function getConnectionName()
+    {
+        return config('database.default') === 'mysql'
+            ? 'visitor_monitor'
+            : parent::getConnectionName();
+    }
+
     protected $fillable = [
         'visitor_profile_id',
         'session_token',
@@ -42,4 +49,3 @@ class VisitorSession extends Model
         return $this->belongsTo(VisitorProfile::class, 'visitor_profile_id');
     }
 }
-
