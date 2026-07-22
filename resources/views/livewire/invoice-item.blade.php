@@ -24,11 +24,11 @@
             <div wire:ignore.self class="border-b border-gray-200 dark:border-gray-700 dark:bg-black">
                 <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" role="tablist">
                     <li class="me-2" role="presentation">
-                        <button wire:ignore.self x-on:click="activeInvoiceTab = 'customer-info'" :class="activeInvoiceTab === 'customer-info' ? 'text-purple-600 border-purple-600' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg" id="customer-info-tab" type="button" role="tab" :aria-selected="activeInvoiceTab === 'customer-info'" aria-controls="customer-info">Customer Info</button>
+                        <button wire:ignore.self x-on:click="activeInvoiceTab = 'customer-info'" :class="activeInvoiceTab === 'customer-info' ? 'text-purple-600 border-purple-600 dark:text-purple-500 dark:border-purple-500' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg" id="customer-info-tab" type="button" role="tab" :aria-selected="activeInvoiceTab === 'customer-info'" aria-controls="customer-info">Customer Info</button>
                     </li>
 
                     <li x-data="{ invoiceid: @entangle('invoiceId'), invoicename: @entangle('invoiceName')}" x-cloak class="me-2" :class="{'hidden': invoiceid === 0 || invoicename === 'On Memo'}" role="presentation">
-                        <button wire:ignore.self x-on:click="activeInvoiceTab = 'payments'" :class="activeInvoiceTab === 'payments' ? 'text-purple-600 border-purple-600' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="payments-tab" type="button" role="tab" :aria-selected="activeInvoiceTab === 'payments'" aria-controls="payments">Payments</button>
+                        <button wire:ignore.self x-on:click="activeInvoiceTab = 'payments'" :class="activeInvoiceTab === 'payments' ? 'text-purple-600 border-purple-600 dark:text-purple-500 dark:border-purple-500' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg" id="payments-tab" type="button" role="tab" :aria-selected="activeInvoiceTab === 'payments'" aria-controls="payments">Payments</button>
                     </li>
                 </ul>
             </div>
