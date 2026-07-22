@@ -6,7 +6,7 @@
 @endpush
 
     <!-- Do what you can, with what you have, where you are. - Theodore Roosevelt -->
-    <div x-data="{ activeInvoiceTab: 'customer-info' }" wire:ignore.self id="slideover-invoice-container" class="fixed inset-0 w-full h-full invisible z-50">
+    <div x-data wire:ignore.self id="slideover-invoice-container" class="fixed inset-0 w-full h-full invisible z-50">
         <div wire:ignore.self id="slideover-invoice-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
         <div wire:ignore.self id="slideover-invoice" class="absolute duration-500 ease-out transition-all h-full bg-white right-0 top-0 translate-x-full overflow-y-scroll md:w-full w-[390px] dark:bg-gray-900" >
             <div class="bg-gray-200 p-3 dark:bg-gray-600 dark:text-gray-300 text-2xl text-gray-500">
@@ -22,13 +22,13 @@
                 </svg>
             </div>
             <div wire:ignore.self class="border-b border-gray-200 dark:border-gray-700 dark:bg-black">
-                <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" role="tablist">
+                <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-500 border-purple-600 dark:border-purple-500" data-tabs-inactive-classes="dark:border-transparent text-gray-500 hover:text-gray-600 dark:text-gray-400 border-gray-100 hover:border-gray-300 dark:border-gray-700 dark:hover:text-gray-300" role="tablist">
                     <li class="me-2" role="presentation">
-                        <button wire:ignore.self x-on:click="activeInvoiceTab = 'customer-info'" :class="activeInvoiceTab === 'customer-info' ? 'text-purple-600 border-purple-600' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg" id="customer-info-tab" type="button" role="tab" :aria-selected="activeInvoiceTab === 'customer-info'" aria-controls="customer-info">Customer Info</button>
+                        <button wire:ignore.self class="inline-block p-4 border-b-2 rounded-t-lg" id="customer-info-tab" data-tabs-target="#customer-info" type="button" role="tab" aria-selected="true" aria-controls="profile">Customer Info</button>
                     </li>
 
                     <li x-data="{ invoiceid: @entangle('invoiceId'), invoicename: @entangle('invoiceName')}" x-cloak class="me-2" :class="{'hidden': invoiceid === 0 || invoicename === 'On Memo'}" role="presentation">
-                        <button wire:ignore.self x-on:click="activeInvoiceTab = 'payments'" :class="activeInvoiceTab === 'payments' ? 'text-purple-600 border-purple-600' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="payments-tab" type="button" role="tab" :aria-selected="activeInvoiceTab === 'payments'" aria-controls="payments">Payments</button>
+                        <button wire:ignore.self class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="payments-tab" data-tabs-target="#payments" type="button" role="tab" aria-selected="false" aria-controls="profile" >Payments</button>
                     </li>
                 </ul>
             </div>
@@ -46,7 +46,7 @@
                 </div>
             </div>
 
-                <div wire:ignore.self x-data="{flex: 1}" x-show="activeInvoiceTab === 'customer-info'" class="p-4 rounded-lg dark:bg-gray-800" id="customer-info" role="tabpanel" aria-labelledby="customer-info-tab">
+                <div wire:ignore.self x-data="{flex: 1}" class="p-4 rounded-lg dark:bg-gray-800" id="customer-info" role="tabpanel" aria-labelledby="customer-info-tab">
                     <form>
                         <div class="grid md:gap-16 mb-6 md:grid-cols-3 p-3 pb-5 bg-gray-100 rounded-lg dark:bg-gray-600">
                             <x-input-standard model="customer.created_at" label="created_at" text="Order Date" validation/>
@@ -364,7 +364,7 @@
                         @endif
                     </form>
                 </div>
-                <div wire:ignore.self x-cloak x-show="activeInvoiceTab === 'payments'" class="rounded-lg dark:bg-gray-800" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+                <div wire:ignore.self class="hidden rounded-lg dark:bg-gray-800" id="payments" role="tabpanel" aria-labelledby="payments-tab">
                     @if ($invoice)
                     <table x-ref="table" class="w-full text-sm text-left rtl:text-right dark:text-gray-400">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
