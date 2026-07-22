@@ -44,7 +44,7 @@
   <body class="dark:bg-gray-800 bg-gray-400">
 
 @if( Auth::user())
-<nav class="fixed top-0 z-50 w-full bg-gray-700 border-b border-gray-400 dark:bg-gray-800 dark:border-gray-700">
+<nav class="fixed top-0 z-50 w-full bg-gray-700 border-b border-white/40 dark:bg-gray-800 dark:border-gray-700">
   <div class="px-3 py-3 lg:px-5 lg:pl-3">
     <div class="flex items-center justify-between">
       <div class="flex items-center justify-start rtl:justify-end">
@@ -104,7 +104,7 @@
   </div>
 </nav>
 
-<aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-48 h-screen pt-20 transition-transform -translate-x-full dark:bg-none bg-linear-to-l from-gray-700 to-gray-500 border-r border-gray-400 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700" aria-label="Sidebar">
+<aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-48 h-screen pt-20 transition-transform -translate-x-full dark:bg-none bg-linear-to-l from-gray-700 to-gray-500 border-r border-white/40 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700" aria-label="Sidebar">
    <div class="h-full px-3 pb-4 overflow-y-auto dark:bg-gray-800">
       <ul class="space-y-2 font-medium">
          <li>
@@ -116,7 +116,7 @@
                <span class="ms-3">Dashboard</span>
             </a>
          </li>
-         <li class="border-t border-gray-400 dark:border-gray-700">
+         <li class="border-t border-white/40 dark:border-gray-700">
             <a href="/admin/products" class="p-0.5 flex items-center text-gray-300 rounded-lg dark:text-white hover:text-gray-100 dark:hover:bg-gray-700 group">
                <svg class="flex-shrink-0 w-5 h-5 text-gray-400 transition duration-75 group-hover:text-gray-300 dark:text-gray-400 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 21">
                      <path d="M15 12a1 1 0 0 0 .962-.726l2-7A1 1 0 0 0 17 3H3.77L3.175.745A1 1 0 0 0 2.208 0H1a1 1 0 0 0 0 2h.438l.6 2.255v.019l2 7 .746 2.986A3 3 0 1 0 9 17a2.966 2.966 0 0 0-.184-1h2.368c-.118.32-.18.659-.184 1a3 3 0 1 0 3-3H6.78l-.5-2H15Z"/>
@@ -133,7 +133,7 @@
             </a>
          </li>
 
-         <li class="border-t border-gray-400 dark:border-gray-700">
+         <li class="border-t border-white/40 dark:border-gray-700">
             <a href="/admin/invoices" class="p-0.5 flex items-center text-gray-300 rounded-lg dark:text-white hover:text-gray-100 dark:hover:bg-gray-700 group">
                <svg class="flex-shrink-0 w-5 h-5 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-300 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
                   <path d="M17 5.923A1 1 0 0 0 16 5h-3V4a4 4 0 1 0-8 0v1H2a1 1 0 0 0-1 .923L.086 17.846A2 2 0 0 0 2.08 20h13.84a2 2 0 0 0 1.994-2.153L17 5.923ZM7 9a1 1 0 0 1-2 0V7h2v2Zm0-5a2 2 0 1 1 4 0v1H7V4Zm6 5a1 1 0 1 1-2 0V7h2v2Z"/>
@@ -166,7 +166,7 @@
                <span class="ms-3">Reports</span>
             </a>
          </li>
-         <li class="border-t border-gray-400 dark:border-gray-700">
+         <li class="border-t border-white/40 dark:border-gray-700">
             <a href="/admin/dealers" class="p-0.5 flex items-center text-gray-300 rounded-lg dark:text-white hover:text-gray-100 dark:hover:bg-gray-700 group">
                <svg class="flex-shrink-0 w-5 h-5 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-300 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
                   <path d="M17 5.923A1 1 0 0 0 16 5h-3V4a4 4 0 1 0-8 0v1H2a1 1 0 0 0-1 .923L.086 17.846A2 2 0 0 0 2.08 20h13.84a2 2 0 0 0 1.994-2.153L17 5.923ZM7 9a1 1 0 0 1-2 0V7h2v2Zm0-5a2 2 0 1 1 4 0v1H7V4Zm6 5a1 1 0 1 1-2 0V7h2v2Z"/>
@@ -174,7 +174,7 @@
                <span class="ms-3">Dealers</span>
             </a>
          </li>
-         <li class="border-t border-gray-400 dark:border-gray-700">
+         <li class="border-t border-white/40 dark:border-gray-700">
             <a href="/admin/credentials" class="p-0.5 flex items-center text-gray-300 rounded-lg dark:text-white hover:text-gray-100 dark:hover:bg-gray-700 group">
                <svg class="flex-shrink-0 w-5 h-5 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-300 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
                   <path d="M17 5.923A1 1 0 0 0 16 5h-3V4a4 4 0 1 0-8 0v1H2a1 1 0 0 0-1 .923L.086 17.846A2 2 0 0 0 2.08 20h13.84a2 2 0 0 0 1.994-2.153L17 5.923ZM7 9a1 1 0 0 1-2 0V7h2v2Zm0-5a2 2 0 1 1 4 0v1H7V4Zm6 5a1 1 0 1 1-2 0V7h2v2Z"/>
@@ -188,6 +188,14 @@
                   <path d="M17 5.923A1 1 0 0 0 16 5h-3V4a4 4 0 1 0-8 0v1H2a1 1 0 0 0-1 .923L.086 17.846A2 2 0 0 0 2.08 20h13.84a2 2 0 0 0 1.994-2.153L17 5.923ZM7 9a1 1 0 0 1-2 0V7h2v2Zm0-5a2 2 0 1 1 4 0v1H7V4Zm6 5a1 1 0 1 1-2 0V7h2v2Z"/>
                </svg>
                <span class="ms-3">Customers</span>
+            </a>
+         </li>
+         <li class="border-t border-white/40 dark:border-gray-700">
+            <a href="/admin/visitor-monitor" class="p-0.5 flex items-center rounded-lg {{ request()->routeIs('visitor-monitor') ? 'bg-amber-500/20 text-amber-300' : 'text-gray-300 hover:text-gray-100 dark:text-white dark:hover:bg-gray-700' }} group">
+               <svg class="h-5 w-5 flex-shrink-0 {{ request()->routeIs('visitor-monitor') ? 'text-amber-400' : 'text-gray-400 group-hover:text-gray-300' }}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm0 3.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5Zm0 11.5c-2.05 0-3.85-.97-5-2.48.03-1.66 3.33-2.57 5-2.57 1.66 0 4.97.91 5 2.57-1.15 1.51-2.95 2.48-5 2.48Z"/>
+               </svg>
+               <span class="ms-3">Visitor Monitor</span>
             </a>
          </li>
 
@@ -209,7 +217,7 @@
 </aside>
 
 <div class="bg-gray-400 dark:bg-gray-800 p-4 sm:ml-48">
-   <div class="p-4 border-2 bg-gray-200 border-gray-400 dark:bg-gray-700 rounded-lg dark:border-gray-700 mt-1 shadow-gray-700 shadow-3xl">
+   <div class="p-4 border-2 bg-gray-200 border-white/40 dark:bg-gray-700 rounded-lg dark:border-gray-700 mt-1 shadow-gray-700 shadow-3xl">
    @yield('content')
    </div>
 </div>
