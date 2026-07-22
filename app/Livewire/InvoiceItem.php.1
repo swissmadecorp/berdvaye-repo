@@ -151,7 +151,7 @@ class InvoiceItem extends Component
 
                 $item = ['op_id'=>$product->pivot->id,'id'=>$product->pivot->product_id,'image'=>$image,
                     'product_name'=> !$product->pivot->product_name ? $product->p_model : $product->pivot->product_name,
-                    'qty'=>$product->pivot->qty,'original_qty'=>$product->pivot->qty,'price'=>$product->pivot->price,
+                    'qty'=>$product->pivot->qty,'price'=>$product->pivot->price,
                     'msg'=>'','cost'=>$cost,'isReturned' =>  $isReturned,
                     'serial'=>$product->pivot->serial];
 
@@ -395,9 +395,6 @@ class InvoiceItem extends Component
 
             $product_ids=array();
             $transferredMemoItemIds = [];
-            $returnBackToInvoiceItems = [];
-
-            $this->removeOriginallyZeroQuantityItemsFromMemo();
 
             foreach ($this->items as $index => $item) {
                 $product_id = $item['id'];
@@ -474,6 +471,7 @@ class InvoiceItem extends Component
                             ]);
 
                         $method = $this->customer['method'];
+                        $returnBackToInvoiceItems = [];
 
                         if ($this->invoice->status == 1) { // sold page
                             $product->p_status=0;
@@ -504,21 +502,15 @@ class InvoiceItem extends Component
                             $product->update();
                         }
 
+                        if (!empty($returnBackToInvoiceItems))
+                            $this->returnBackToInvoice($returnBackToInvoiceItems);
+
+                        if (!empty($this->creditedItems))
+                            $this->returnPaidBackToStock();
+
+                        $this->returnSelectedItems($this->removedItems, $returnBackToInvoiceItems);
+
                     }
-                }
-            }
-
-            if (!$this->memoTransfer) {
-                if (!empty($returnBackToInvoiceItems)) {
-                    $this->returnBackToInvoice($returnBackToInvoiceItems);
-                }
-
-                if (!empty($this->creditedItems)) {
-                    $this->returnPaidBackToStock();
-                }
-
-                if (!empty($this->removedItems) || !empty($returnBackToInvoiceItems)) {
-                    $this->returnSelectedItems($this->removedItems, $returnBackToInvoiceItems);
                 }
             }
 
@@ -746,38 +738,6 @@ class InvoiceItem extends Component
             'subtotal' => $subtotal,
             'total' => number_format($total, 2, '.', ''),
         ]);
-    }
-
-    protected function removeOriginallyZeroQuantityItemsFromMemo(): void
-    {
-        if ($this->memoTransfer || !$this->invoiceId || !$this->invoice || $this->invoice->method !== 'On Memo') {
-            return;
-        }
-
-        $removedItems = collect($this->removedItems);
-        $zeroQuantityItems = $removedItems->filter(function ($item) {
-            return (float) ($item['original_qty'] ?? $item['qty'] ?? 0) === 0.0;
-        });
-
-        $pivotIds = $zeroQuantityItems
-            ->pluck('op_id')
-            ->filter()
-            ->values()
-            ->all();
-
-        if (!empty($pivotIds)) {
-            \DB::table('order_product')
-                ->where('order_id', $this->invoiceId)
-                ->whereIn('id', $pivotIds)
-                ->delete();
-        }
-
-        $this->removedItems = $removedItems
-            ->reject(function ($item) {
-                return (float) ($item['original_qty'] ?? $item['qty'] ?? 0) === 0.0;
-            })
-            ->values()
-            ->all();
     }
 
     #[On('create-invoice')]
