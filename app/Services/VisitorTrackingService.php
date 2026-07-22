@@ -445,6 +445,7 @@ class VisitorTrackingService
         $endedAt = $storedEndedAt ?: ($active ? Carbon::now('UTC') : $lastSeenAt);
         $secondsOnSite = (int) max(0, optional($startedAt)->diffInSeconds($endedAt ?? Carbon::now('UTC')) ?? 0);
         $displayName = $profile?->display_name ?: null;
+        $isBackground = $active && data_get($session->metadata, 'visibility_state', 'visible') === 'hidden';
 
         return [
             'id' => $session->id,
@@ -478,7 +479,9 @@ class VisitorTrackingService
             'ended_date_label' => $this->formatDateTimeLabel($storedEndedAt),
             'seconds_on_site' => $secondsOnSite,
             'time_on_site' => $this->formatDuration($secondsOnSite),
-            'status_label' => $active ? 'Browsing now' : ($session->ended_at ? 'Ended' : 'Timed out'),
+            'status_label' => $active
+                ? ($isBackground ? 'Tab in background' : 'Browsing now')
+                : ($session->ended_at ? 'Ended' : 'Timed out'),
             'location_label' => collect([$session->city ?: $profile?->city, $session->country ?: $profile?->country])
                 ->filter()
                 ->implode(', ') ?: 'Unknown location',
@@ -528,9 +531,16 @@ class VisitorTrackingService
         $summary['monitor_key'] = $summary['visitor_key'] ?: 'session:' . $summary['session_token'];
         $summary['active_page_count'] = $activePages->count();
         $summary['active_pages'] = $activePages->all();
+        $visibleSessionCount = $sessions
+            ->filter(fn (VisitorSession $session) => data_get($session->metadata, 'visibility_state', 'visible') !== 'hidden')
+            ->count();
 
         if ($activePages->count() > 1) {
-            $summary['status_label'] = 'Browsing ' . $activePages->count() . ' pages';
+            $summary['status_label'] = $visibleSessionCount > 0
+                ? 'Browsing ' . $activePages->count() . ' pages'
+                : 'Tabs in background';
+        } elseif ($visibleSessionCount === 0) {
+            $summary['status_label'] = 'Tab in background';
         }
 
         return $summary;
@@ -870,13 +880,17 @@ class VisitorTrackingService
             return false;
         }
 
-        $lastSeenAt = $session->last_seen_at ?: $session->started_at ?: $session->created_at;
+        $lastSeenAt = $this->canonicalSessionDate(
+            $session,
+            'last_seen_at_utc',
+            $session->last_seen_at ?: $session->started_at ?: $session->created_at,
+        );
 
         if (! $lastSeenAt) {
             return false;
         }
 
-        $referenceTime ??= now();
+        $referenceTime ??= Carbon::now('UTC');
 
         return $lastSeenAt->gte(
             $referenceTime->copy()->subSeconds($this->sessionActivityWindowSeconds($session))
@@ -885,11 +899,7 @@ class VisitorTrackingService
 
     private function sessionIsLiveForMonitor(VisitorSession $session, ?Carbon $referenceTime = null): bool
     {
-        if (! $this->sessionIsOnline($session, $referenceTime)) {
-            return false;
-        }
-
-        return data_get($session->metadata, 'visibility_state', 'visible') !== 'hidden';
+        return $this->sessionIsOnline($session, $referenceTime);
     }
 
     private function sessionActivityWindowSeconds(VisitorSession $session): int
