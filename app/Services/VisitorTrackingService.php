@@ -26,7 +26,7 @@ class VisitorTrackingService
         $this->purgeExpiredDataIfDue();
         $this->expireInactiveSessions();
 
-        $now = now();
+        $now = Carbon::now('UTC');
         $visitorKey = $payload['visitor_key'];
         $sessionToken = $payload['session_token'];
         $visibilityState = $payload['visibility_state'] ?? 'visible';
@@ -167,7 +167,11 @@ class VisitorTrackingService
             return null;
         }
 
-        $now = now();
+        $now = Carbon::now('UTC');
+
+        $metadata = is_array($session->metadata) ? $session->metadata : [];
+        $metadata['last_seen_at_utc'] = $now->toIso8601String();
+        $metadata['ended_at_utc'] = $now->toIso8601String();
 
         $session->forceFill([
             'current_url' => $payload['page_url'] ?? $session->current_url,
@@ -175,6 +179,7 @@ class VisitorTrackingService
             'current_title' => $payload['page_title'] ?? $session->current_title,
             'last_seen_at' => $now,
             'ended_at' => $now,
+            'metadata' => $metadata,
         ])->save();
 
         if ($session->profile) {
@@ -434,8 +439,11 @@ class VisitorTrackingService
     {
         $session->loadMissing('profile');
         $profile = $session->profile;
-        $endedAt = $session->ended_at ?: ($active ? now() : $session->last_seen_at);
-        $secondsOnSite = (int) max(0, optional($session->started_at)->diffInSeconds($endedAt ?? now()) ?? 0);
+        $startedAt = $this->canonicalSessionDate($session, 'started_at_utc', $session->started_at);
+        $lastSeenAt = $this->canonicalSessionDate($session, 'last_seen_at_utc', $session->last_seen_at);
+        $storedEndedAt = $this->canonicalSessionDate($session, 'ended_at_utc', $session->ended_at);
+        $endedAt = $storedEndedAt ?: ($active ? Carbon::now('UTC') : $lastSeenAt);
+        $secondsOnSite = (int) max(0, optional($startedAt)->diffInSeconds($endedAt ?? Carbon::now('UTC')) ?? 0);
         $displayName = $profile?->display_name ?: null;
 
         return [
@@ -463,11 +471,11 @@ class VisitorTrackingService
             'referrer_host' => $session->referrer_host,
             'landing_path' => $this->sanitizeDisplayPath($session->landing_path),
             'page_views' => $session->page_views,
-            'started_at' => optional($session->started_at)?->toIso8601String(),
-            'visit_date_label' => $this->formatDateTimeLabel($session->started_at),
-            'last_seen_at' => optional($session->last_seen_at)?->toIso8601String(),
-            'ended_at' => optional($session->ended_at)?->toIso8601String(),
-            'ended_date_label' => $this->formatDateTimeLabel($session->ended_at),
+            'started_at' => optional($startedAt)?->toIso8601String(),
+            'visit_date_label' => $this->formatDateTimeLabel($startedAt),
+            'last_seen_at' => optional($lastSeenAt)?->toIso8601String(),
+            'ended_at' => optional($storedEndedAt)?->toIso8601String(),
+            'ended_date_label' => $this->formatDateTimeLabel($storedEndedAt),
             'seconds_on_site' => $secondsOnSite,
             'time_on_site' => $this->formatDuration($secondsOnSite),
             'status_label' => $active ? 'Browsing now' : ($session->ended_at ? 'Ended' : 'Timed out'),
@@ -497,20 +505,20 @@ class VisitorTrackingService
                     'session_token' => $session->session_token,
                     'path' => $path ?: 'Unknown page',
                     'url' => $url,
-                    'last_seen_at' => optional($session->last_seen_at)?->toIso8601String(),
+                    'last_seen_at' => optional($this->canonicalSessionDate($session, 'last_seen_at_utc', $session->last_seen_at))?->toIso8601String(),
                 ];
             })
             ->unique(fn (array $page) => ($page['url'] ?: '') . '|' . $page['path'])
             ->values();
 
         $startedAt = $sessions
-            ->pluck('started_at')
+            ->map(fn (VisitorSession $session) => $this->canonicalSessionDate($session, 'started_at_utc', $session->started_at))
             ->filter()
             ->sort()
             ->first();
 
         if ($startedAt) {
-            $secondsOnSite = (int) max(0, $startedAt->diffInSeconds(now()));
+            $secondsOnSite = (int) max(0, $startedAt->diffInSeconds(Carbon::now('UTC')));
             $summary['started_at'] = $startedAt->toIso8601String();
             $summary['visit_date_label'] = $this->formatDateTimeLabel($startedAt);
             $summary['seconds_on_site'] = $secondsOnSite;
@@ -898,6 +906,9 @@ class VisitorTrackingService
         $metadata = is_array($session?->metadata) ? $session->metadata : [];
         $previousVisibilityState = data_get($metadata, 'visibility_state', 'visible');
 
+        $metadata['started_at_utc'] ??= $now->copy()->utc()->toIso8601String();
+        $metadata['last_seen_at_utc'] = $now->copy()->utc()->toIso8601String();
+
         if (
             $pageChanged
             && $session
@@ -923,6 +934,25 @@ class VisitorTrackingService
         }
 
         return $metadata;
+    }
+
+    private function canonicalSessionDate(VisitorSession $session, string $metadataKey, Carbon|string|null $fallback): ?Carbon
+    {
+        $value = data_get($session->metadata, $metadataKey);
+
+        if ($value) {
+            try {
+                return Carbon::parse($value)->utc();
+            } catch (\Throwable) {
+                // Fall back to the legacy timestamp column.
+            }
+        }
+
+        if (! $fallback) {
+            return null;
+        }
+
+        return $fallback instanceof Carbon ? $fallback->copy() : Carbon::parse($fallback);
     }
 
     private function formatMetadataDate(?string $value): ?string
