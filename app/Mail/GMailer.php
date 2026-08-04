@@ -129,18 +129,16 @@ class GMailer
         }
 
         // Recipients
-        if (isset($this->event['from']))
-            $from = $this->event['from'];
-        else $from = 'Berdvaye';
-
-        $mail->setFrom(config('gmailer.mail_from'), $from);
-        $mail->addReplyTo(config('gmailer.mail_from'), $from);
+        $mail->setFrom(config('gmailer.mail_from'), "Customer Support");
 
         if (isset($this->event['fullname']))
             $fullname=$this->event['fullname'];
         else $fullname = $this->event['to'];
 
         $mail->addAddress($this->event['to'], $fullname);
+        if (isset($this->event["replyTo"]))
+            $mail->addReplyTo($this->event["replyTo"], $fullname);
+        else $mail->addReplyTo(config('gmailer.mail_from'), "Customer Support");
 
         $mail->Subject = $this->event['subject'];
         $mail->CharSet = PHPMailer::CHARSET_UTF8;
@@ -148,6 +146,7 @@ class GMailer
         $html = view($this->event['template'], $this->event)->render();
         $mail->msgHTML($html);
         //$mail->AltBody = 'This is a plain-text message body';
+        \Log::info('sent email successfully');
         $mail->send();
     }
 }
