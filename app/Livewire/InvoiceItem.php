@@ -576,7 +576,7 @@ class InvoiceItem extends Component
             'invoice_id' => $this->invoiceId,
             'firstname' => $this->customer['b_firstname'],
             'lastname'  => $this->customer['b_lastname'],
-            'email'     => $this->customer['b_email'],
+            'email'     => $this->customer['email'],
         ];
 
         foreach ($this->items as $product) {
