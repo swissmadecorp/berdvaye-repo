@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use Illuminate\Support\Facades\Http;
 use League\OAuth2\Client\Provider\Google;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\OAuth;
@@ -130,8 +129,6 @@ class GMailer
         }
 
         // Recipients
-        $recipientEmail = $this->event['to'];
-
         if (isset($this->event['from']))
             $from = $this->event['from'];
         else $from = 'Berdvaye';
@@ -152,66 +149,5 @@ class GMailer
         $mail->msgHTML($html);
         //$mail->AltBody = 'This is a plain-text message body';
         $mail->send();
-
-        $this->saveCopyToSentFolder(
-            $mail->getSentMIMEMessage(),
-            $provider,
-            $refreshToken
-        );
-        return true;
-    }
-
-    private function saveCopyToSentFolder(
-        string $mimeMessage,
-        Google $provider,
-        string $refreshToken
-    ): void {
-        /*
-        * Exchange the refresh token for a temporary access token.
-        */
-        $accessToken = $provider->getAccessToken(
-            'refresh_token',
-            [
-                'refresh_token' => $refreshToken,
-            ]
-        );
-
-        /*
-        * Gmail requires URL-safe Base64:
-        *
-        * + becomes -
-        * / becomes _
-        * trailing = characters are removed
-        */
-        $encodedMessage = rtrim(
-            strtr(
-                base64_encode($mimeMessage),
-                '+/',
-                '-_'
-            ),
-            '='
-        );
-
-        /*
-        * Insert the MIME message into the authenticated Gmail mailbox
-        * and apply the SENT label.
-        */
-        $response = Http::withToken($accessToken->getToken())
-            ->acceptJson()
-            ->post(
-                'https://gmail.googleapis.com/gmail/v1/users/me/messages',
-                [
-                    'raw' => $encodedMessage,
-                    'labelIds' => ['SENT'],
-                ]
-            );
-
-        if ($response->failed()) {
-            throw new \RuntimeException(
-                'The email was sent, but Gmail could not save the Sent copy. ' .
-                'Gmail API response: ' .
-                $response->body()
-            );
-        }
     }
 }
