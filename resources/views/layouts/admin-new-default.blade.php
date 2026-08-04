@@ -174,6 +174,7 @@
                <span class="ms-3">Dealers</span>
             </a>
          </li>
+         @role('superadmin')
          <li class="border-t border-white/40 dark:border-gray-700">
             <a href="/admin/credentials" class="p-0.5 flex items-center text-gray-300 rounded-lg dark:text-white hover:text-gray-100 dark:hover:bg-gray-700 group">
                <svg class="flex-shrink-0 w-5 h-5 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-300 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
@@ -182,6 +183,7 @@
                <span class="ms-3">Credentials</span>
             </a>
          </li>
+         @endrole
          <li>
             <a href="/admin/customers" class="p-0.5 flex items-center text-gray-300 rounded-lg dark:text-white hover:text-gray-100 dark:hover:bg-gray-700 group">
                <svg class="flex-shrink-0 w-5 h-5 text-gray-400 transition duration-75 dark:text-gray-400 group-hover:text-gray-300 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
