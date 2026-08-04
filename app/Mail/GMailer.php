@@ -6,8 +6,11 @@ use Google\Client as GoogleClient;
 use Google\Service\Gmail;
 use Google\Service\Gmail\Message as GmailMessage;
 use League\OAuth2\Client\Provider\Google as GoogleOAuthProvider;
+use PHPMailer\PHPMailer\OAuth;
 use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
 use RuntimeException;
+use Throwable;
 
 class GMailer
 {
@@ -53,6 +56,31 @@ class GMailer
 
         $mail = new PHPMailer(true);
 
+        $mail->isSMTP();
+        $mail->SMTPDebug = SMTP::DEBUG_OFF;
+        $mail->Host = 'smtp.gmail.com';
+        $mail->Port = 587;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->SMTPAuth = true;
+        $mail->AuthType = 'XOAUTH2';
+
+        $clientId = config('gmailer.client_id');
+        $clientSecret = config('gmailer.client_secret');
+        $refreshToken = config('gmailer.refresh_token');
+
+        $provider = new GoogleOAuthProvider([
+            'clientId' => $clientId,
+            'clientSecret' => $clientSecret,
+        ]);
+
+        $mail->setOAuth(new OAuth([
+            'provider' => $provider,
+            'clientId' => $clientId,
+            'clientSecret' => $clientSecret,
+            'refreshToken' => $refreshToken,
+            'userName' => config('gmailer.mail_from'),
+        ]));
+
         $isArray = false;
         if (isset($this->event['filename'])) {
             // $attachments is an array with file paths of attachments
@@ -90,16 +118,45 @@ class GMailer
         $mail->msgHTML($html);
         //$mail->AltBody = 'This is a plain-text message body';
 
-        // PHPMailer builds the complete RFC 5322 message, while Gmail sends it.
-        // Messages sent with users.messages.send are automatically stored with
-        // Gmail's SENT label, so they appear in the account's Sent folder.
-        $mail->preSend();
+        // SMTP delivery remains the primary operation. Gmail normally adds these
+        // submissions to Sent automatically.
+        $mail->send();
+
+        // Some alias/account configurations do not show SMTP submissions in Sent.
+        // Filing a copy is deliberately best-effort and must never fail delivery.
+        try {
+            $this->saveToSentIfMissing($mail);
+        } catch (Throwable $exception) {
+            logger()->warning('Email delivered, but its Sent-folder copy could not be verified.', [
+                'message_id' => $mail->getLastMessageID(),
+                'exception' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    private function saveToSentIfMissing(PHPMailer $mail): void
+    {
+        $gmail = new Gmail($this->googleClient());
+        $messageId = trim($mail->getLastMessageID(), '<>');
+
+        if ($messageId !== '') {
+            $existing = $gmail->users_messages->listUsersMessages('me', [
+                'q' => 'in:sent rfc822msgid:' . $messageId,
+                'maxResults' => 1,
+            ]);
+
+            if (count($existing->getMessages() ?? []) > 0) {
+                return;
+            }
+        }
 
         $message = new GmailMessage();
         $message->setRaw($this->base64UrlEncode($mail->getSentMIMEMessage()));
+        $message->setLabelIds(['SENT']);
 
-        $gmail = new Gmail($this->googleClient());
-        $gmail->users_messages->send('me', $message);
+        $gmail->users_messages->insert('me', $message, [
+            'internalDateSource' => 'dateHeader',
+        ]);
     }
 
     private function googleClient(): GoogleClient
