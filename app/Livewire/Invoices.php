@@ -101,7 +101,7 @@ class Invoices extends Component
             $filename[] = $ret[0];
 
             if ($order->email=='') {
-                LivewireAlert::title("Email was not specified. Please enter email and try again!")->error()->toast()->show();
+                LivewireAlert::title("Email was not specified. Please enter email and try again!")->success()->toast()->show();
                 return;
             }
 
