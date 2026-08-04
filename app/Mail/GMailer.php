@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use Illuminate\Support\Facades\Http;
 use League\OAuth2\Client\Provider\Google;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\OAuth;
