@@ -192,6 +192,7 @@
                <span class="ms-3">Customers</span>
             </a>
          </li>
+         @role('superadmin')
          <li class="border-t border-white/40 dark:border-gray-700">
             <a href="/admin/visitor-monitor" class="p-0.5 flex items-center rounded-lg {{ request()->routeIs('visitor-monitor') ? 'bg-amber-500/20 text-amber-300' : 'text-gray-300 hover:text-gray-100 dark:text-white dark:hover:bg-gray-700' }} group">
                <svg class="h-5 w-5 flex-shrink-0 {{ request()->routeIs('visitor-monitor') ? 'text-amber-400' : 'text-gray-400 group-hover:text-gray-300' }}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -200,7 +201,7 @@
                <span class="ms-3">Visitor Monitor</span>
             </a>
          </li>
-
+         @endrole
                   <!-- <li>
                      <a href="/admin/lvreports" class="p-0.5 flex items-center w-full text-gray-300 transition duration-75 rounded-lg pl-11 group hover:text-gray-100 dark:text-white dark:hover:bg-gray-700">Reports</a>
                   </li> -->
