@@ -73,7 +73,6 @@ class Invoices extends Component
     #[On('display-message')]
     public function displayMessage($msg) {
 
-    dd('asdf');
         if (is_array($msg)) {
             if (isset($msg['msg']))
                 LivewireAlert::title($msg['msg'])->success()->position(Position::TopEnd)->toast()->show();
@@ -110,7 +109,7 @@ class Invoices extends Component
             $order->update();
         }
 
-        LivewireAlert::title("Successfully emailed invoice!")->success()->toast()->show();
+        LivewireAlert::title("Successfully emailed invoice")->success()->toast()->show();
         // request()->session()->flash('message', "Successfully emailed invoice!");
     }
 
