@@ -753,7 +753,7 @@ Invoiced
             $gmail = new GMailer($data);
             $gmail->send();
 
-            Session::flash('message', "Successfully emailed invoice!");
+            // Session::flash('message', "Successfully emailed invoice!");
             unlink(public_path().'/uploads/'.$filename.'.pdf');
             //unlink(public_path().'/uploads/'.$filename.'.jpg');
             return [public_path().'/uploads/'.$filename.'.pdf',$order];
