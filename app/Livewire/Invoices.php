@@ -73,6 +73,7 @@ class Invoices extends Component
     #[On('display-message')]
     public function displayMessage($msg) {
 
+    dd('asdf');
         if (is_array($msg)) {
             if (isset($msg['msg']))
                 LivewireAlert::title($msg['msg'])->success()->position(Position::TopEnd)->toast()->show();
@@ -101,7 +102,7 @@ class Invoices extends Component
             $filename[] = $ret[0];
 
             if ($order->email=='') {
-                LivewireAlert::title("Email was not specified. Please enter email and try again!")->success()->toast()->show();
+                LivewireAlert::title("Email was not specified. Please enter email and try again!")->error()->toast()->show();
                 return;
             }
 
@@ -109,7 +110,7 @@ class Invoices extends Component
             $order->update();
         }
 
-        LivewireAlert::title("Successfully emailed invoice!")->error()->toast()->show();
+        LivewireAlert::title("Successfully emailed invoice!")->success()->toast()->show();
         // request()->session()->flash('message', "Successfully emailed invoice!");
     }
 
