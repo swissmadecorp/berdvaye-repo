@@ -393,6 +393,8 @@ class InvoiceItem extends Component
                 $order->customers()->attach($customer->id);
             }
 
+            $previousInvoiceTotal = (float) $order->total;
+
             $product_ids=array();
             $transferredMemoItemIds = [];
             $returnBackToInvoiceItems = [];
@@ -545,8 +547,13 @@ class InvoiceItem extends Component
                 $total = $this->totalPrice+$freight;
             }
 
-            // dd($order->payments->sum('amount') , ' ', $total);
-            if ($order->payments->sum('amount') == $total && $order->payments->sum('amount') > 0)
+            $paidAmount = (float) $order->payments->sum('amount');
+
+            if ($this->invoiceId && !$this->memoTransfer && $paidAmount > 0) {
+                $this->creditInvoiceOverpayment($order, $previousInvoiceTotal, (float) $total);
+            }
+
+            if ($order->status != 3 && $paidAmount >= (float) $total && $paidAmount > 0)
                 $status = 1;
             else $status = $order->status;
 
@@ -703,6 +710,47 @@ class InvoiceItem extends Component
                     ->where('id', $orderProduct->id)
                     ->delete();
             });
+    }
+
+    /** Credit an overpayment created by editing an already-paid invoice. */
+    protected function creditInvoiceOverpayment(Order $order, float $previousTotal, float $newTotal): void
+    {
+        $paidAmount = (float) $order->payments->sum('amount');
+        $previousOverpayment = max(0, $paidAmount - $previousTotal);
+        $newOverpayment = max(0, $paidAmount - $newTotal);
+        $creditAmount = $newOverpayment - $previousOverpayment;
+
+        $customerId = $order->customers()->value('customers.id');
+
+        if (!$customerId) {
+            return;
+        }
+
+        $reference = 'paid invoice adjustment #'.$order->id;
+        $credit = Credit::where('customer_id', $customerId)
+            ->where('ref', $reference)
+            ->first();
+
+        // This also repairs an invoice that was already edited before this fix.
+        if (!$credit && $newOverpayment > 0) {
+            $creditAmount = $newOverpayment;
+        }
+
+        if ($creditAmount <= 0) {
+            return;
+        }
+
+        if ($credit) {
+            $credit->increment('amount', $creditAmount);
+        } else {
+            Credit::create([
+                'customer_id' => $customerId,
+                'amount' => $creditAmount,
+                'ref' => $reference,
+            ]);
+        }
+
+        $this->creditAmount = (float) ($credit?->fresh()->amount ?? $creditAmount);
     }
 
     protected function returnSelectedItems($removedItems, $returnBackToInvoiceItems = []) {
