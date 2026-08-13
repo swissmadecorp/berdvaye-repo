@@ -233,31 +233,35 @@ class InvoiceItem extends Component
     }
 
     public function savePayment($totalLeft) {
-        $validatedData = $this->validate([
-            'paymentAmount' => 'required',
+        $this->paymentAmount = preg_replace('/[^0-9.\-]/', '', (string) $this->paymentAmount);
+        $totalLeft = (float) preg_replace('/[^0-9.\-]/', '', (string) $totalLeft);
+
+        $this->validate([
+            'paymentAmount' => 'required|numeric|gt:0',
             'paymentRef' => 'required|string',
         ], [
             'paymentAmount.required' => 'Payment Amount is required.',
+            'paymentAmount.numeric' => 'Payment Amount must be a valid dollar amount.',
+            'paymentAmount.gt' => 'Payment Amount must be greater than zero.',
             'paymentRef.required' => 'Payment Reference is required.',
         ]);
 
-        if ($this->paymentAmount > $totalLeft)
-            $applyAmount = $totalLeft;
-        else $applyAmount = $this->paymentAmount;
+        $applyAmount = min((float) $this->paymentAmount, $totalLeft);
+        $order = $this->invoice ?: Order::findOrFail($this->invoiceId);
 
-        $orderId = $this->invoice->id;
-
-        Payment::create ([
+        Payment::create([
             'amount' => $applyAmount,
-            'ref' => $this->paymentRef,
-            'order_id' => $orderId
+            'ref' => trim($this->paymentRef),
+            'order_id' => $order->id,
         ]);
 
-        if ($this->invoice->payments->sum('amount') == $this->invoice->total) {
-            $this->invoice->status = 1;
-            $this->invoice->update();
+        $paidAmount = (float) $order->payments()->sum('amount');
+        if ($paidAmount >= (float) $order->total) {
+            $order->update(['status' => 1]);
         }
 
+        $this->paymentAmount = $applyAmount;
+        $this->invoice = $order->fresh(['payments', 'customers']);
         $this->calculateTotalOwed();
 
         $this->reset('paymentAmount','paymentRef','isCreditApplied');
@@ -392,8 +396,6 @@ class InvoiceItem extends Component
                 $order = Order::create($this->customer);
                 $order->customers()->attach($customer->id);
             }
-
-            $previousInvoiceTotal = (float) $order->total;
 
             $product_ids=array();
             $transferredMemoItemIds = [];
@@ -550,7 +552,7 @@ class InvoiceItem extends Component
             $paidAmount = (float) $order->payments->sum('amount');
 
             if ($this->invoiceId && !$this->memoTransfer && $paidAmount > 0) {
-                $this->creditInvoiceOverpayment($order, $previousInvoiceTotal, (float) $total);
+                $this->creditInvoiceOverpayment($order, (float) $total);
             }
 
             if ($order->status != 3 && $paidAmount >= (float) $total && $paidAmount > 0)
@@ -713,14 +715,15 @@ class InvoiceItem extends Component
     }
 
     /** Credit an overpayment created by editing an already-paid invoice. */
-    protected function creditInvoiceOverpayment(Order $order, float $previousTotal, float $newTotal): void
+    protected function creditInvoiceOverpayment(Order $order, float $newTotal): void
     {
         $paidAmount = (float) $order->payments->sum('amount');
-        $previousOverpayment = max(0, $paidAmount - $previousTotal);
-        $newOverpayment = max(0, $paidAmount - $newTotal);
-        $creditAmount = $newOverpayment - $previousOverpayment;
+        $creditAmount = max(0, $paidAmount - $newTotal);
 
-        $customerId = $order->customers()->value('customers.id');
+        $customerId = \DB::table('customer_order')
+            ->where('order_id', $order->id)
+            ->orderBy('customer_id')
+            ->value('customer_id');
 
         if (!$customerId) {
             return;
@@ -731,26 +734,23 @@ class InvoiceItem extends Component
             ->where('ref', $reference)
             ->first();
 
-        // This also repairs an invoice that was already edited before this fix.
-        if (!$credit && $newOverpayment > 0) {
-            $creditAmount = $newOverpayment;
-        }
-
-        if ($creditAmount <= 0) {
+        if ($creditAmount == 0) {
+            $credit?->delete();
+            $this->creditAmount = 0;
             return;
         }
 
         if ($credit) {
-            $credit->increment('amount', $creditAmount);
+            $credit->update(['amount' => $creditAmount]);
         } else {
-            Credit::create([
+            $credit = Credit::create([
                 'customer_id' => $customerId,
                 'amount' => $creditAmount,
                 'ref' => $reference,
             ]);
         }
 
-        $this->creditAmount = (float) ($credit?->fresh()->amount ?? $creditAmount);
+        $this->creditAmount = (float) $creditAmount;
     }
 
     protected function returnSelectedItems($removedItems, $returnBackToInvoiceItems = []) {
