@@ -151,7 +151,7 @@ class InvoiceItem extends Component
 
                 $item = ['op_id'=>$product->pivot->id,'id'=>$product->pivot->product_id,'image'=>$image,
                     'product_name'=> !$product->pivot->product_name ? $product->p_model : $product->pivot->product_name,
-                    'qty'=>$product->pivot->qty,'price'=>$product->pivot->price,
+                    'qty'=>$product->pivot->qty,'original_qty'=>$product->pivot->qty,'price'=>$product->pivot->price,
                     'msg'=>'','cost'=>$cost,'isReturned' =>  $isReturned,
                     'serial'=>$product->pivot->serial];
 
@@ -395,6 +395,9 @@ class InvoiceItem extends Component
 
             $product_ids=array();
             $transferredMemoItemIds = [];
+            $returnBackToInvoiceItems = [];
+
+            $this->removeOriginallyZeroQuantityItemsFromMemo();
 
             foreach ($this->items as $index => $item) {
                 $product_id = $item['id'];
@@ -471,22 +474,18 @@ class InvoiceItem extends Component
                             ]);
 
                         $method = $this->customer['method'];
-                        $returnBackToInvoiceItems = [];
+                        $originalQty = (int) ($item['original_qty'] ?? $product->pivot->qty ?? 0);
 
                         if ($this->invoice->status == 1) { // sold page
                             $product->p_status=0;
-                            if ($qty == 0 && $method == "Invoice") {
-                                if ($qty == 0)
-                                    $product->increment('p_qty');
+                            if ($qty == 0 && $originalQty > 0 && $method == "Invoice") {
+                                $product->increment('p_qty');
                             }
                             $product->update();
                         } elseif ($this->invoice->status == 0) { // open invoice/memo
                             $product->p_status=0;
-                            if ($qty == 0) {
-                                if ($method == "Invoice") {
-                                    if ($qty == 0)
-                                        $product->increment('p_qty');
-                                }
+                            if ($qty == 0 && $originalQty > 0 && $method == "Invoice") {
+                                $product->increment('p_qty');
                             }
 
                             $product->update();
@@ -502,15 +501,25 @@ class InvoiceItem extends Component
                             $product->update();
                         }
 
-                        if (!empty($returnBackToInvoiceItems))
-                            $this->returnBackToInvoice($returnBackToInvoiceItems);
-
-                        if (!empty($this->creditedItems))
-                            $this->returnPaidBackToStock();
-
-                        $this->returnSelectedItems($this->removedItems, $returnBackToInvoiceItems);
-
                     }
+                }
+            }
+
+            if (!$this->memoTransfer) {
+                if (!empty($returnBackToInvoiceItems)) {
+                    $this->returnBackToInvoice($returnBackToInvoiceItems);
+                }
+
+                if (!empty($this->creditedItems)) {
+                    $this->returnPaidBackToStock();
+                }
+
+                if (!empty($this->removedItems)) {
+                    $this->deleteRemovedItems($this->removedItems);
+                }
+
+                if (!empty($returnBackToInvoiceItems)) {
+                    $this->returnSelectedItems([], $returnBackToInvoiceItems);
                 }
             }
 
@@ -654,6 +663,48 @@ class InvoiceItem extends Component
         }
     }
 
+    /**
+     * Permanently remove lines deleted in the invoice editor.
+     *
+     * Deleting a line is different from changing its quantity to zero: a
+     * deleted line must not be represented by an order return (or credit),
+     * while its inventory still needs to be restored.
+     */
+    protected function deleteRemovedItems(array $removedItems): void
+    {
+        $method = $this->invoice?->method
+            ?? \DB::table('orders')->where('id', $this->invoiceId)->value('method');
+
+        collect($removedItems)
+            ->filter(fn ($item) => !empty($item['op_id']))
+            ->unique('op_id')
+            ->each(function ($item) use ($method) {
+                $orderProduct = \DB::table('order_product')
+                    ->where('order_id', $this->invoiceId)
+                    ->where('id', $item['op_id'])
+                    ->first();
+
+                if (!$orderProduct) {
+                    return;
+                }
+
+                if ((int) $orderProduct->product_id !== 491) {
+                    $product = Product::where('id', $orderProduct->product_id);
+
+                    if ($method === 'Invoice' && (int) $orderProduct->qty > 0) {
+                        $product->increment('p_qty', (int) $orderProduct->qty, ['p_status' => 0]);
+                    } else {
+                        $product->update(['p_status' => 0]);
+                    }
+                }
+
+                \DB::table('order_product')
+                    ->where('order_id', $this->invoiceId)
+                    ->where('id', $orderProduct->id)
+                    ->delete();
+            });
+    }
+
     protected function returnSelectedItems($removedItems, $returnBackToInvoiceItems = []) {
 
         $return = OrderReturn::where('order_id', $this->invoiceId)->first();
@@ -738,6 +789,38 @@ class InvoiceItem extends Component
             'subtotal' => $subtotal,
             'total' => number_format($total, 2, '.', ''),
         ]);
+    }
+
+    protected function removeOriginallyZeroQuantityItemsFromMemo(): void
+    {
+        if ($this->memoTransfer || !$this->invoiceId || !$this->invoice || $this->invoice->method !== 'On Memo') {
+            return;
+        }
+
+        $removedItems = collect($this->removedItems);
+        $zeroQuantityItems = $removedItems->filter(function ($item) {
+            return (float) ($item['original_qty'] ?? $item['qty'] ?? 0) === 0.0;
+        });
+
+        $pivotIds = $zeroQuantityItems
+            ->pluck('op_id')
+            ->filter()
+            ->values()
+            ->all();
+
+        if (!empty($pivotIds)) {
+            \DB::table('order_product')
+                ->where('order_id', $this->invoiceId)
+                ->whereIn('id', $pivotIds)
+                ->delete();
+        }
+
+        $this->removedItems = $removedItems
+            ->reject(function ($item) {
+                return (float) ($item['original_qty'] ?? $item['qty'] ?? 0) === 0.0;
+            })
+            ->values()
+            ->all();
     }
 
     #[On('create-invoice')]

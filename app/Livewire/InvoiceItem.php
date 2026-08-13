@@ -474,21 +474,18 @@ class InvoiceItem extends Component
                             ]);
 
                         $method = $this->customer['method'];
+                        $originalQty = (int) ($item['original_qty'] ?? $product->pivot->qty ?? 0);
 
                         if ($this->invoice->status == 1) { // sold page
                             $product->p_status=0;
-                            if ($qty == 0 && $method == "Invoice") {
-                                if ($qty == 0)
-                                    $product->increment('p_qty');
+                            if ($qty == 0 && $originalQty > 0 && $method == "Invoice") {
+                                $product->increment('p_qty');
                             }
                             $product->update();
                         } elseif ($this->invoice->status == 0) { // open invoice/memo
                             $product->p_status=0;
-                            if ($qty == 0) {
-                                if ($method == "Invoice") {
-                                    if ($qty == 0)
-                                        $product->increment('p_qty');
-                                }
+                            if ($qty == 0 && $originalQty > 0 && $method == "Invoice") {
+                                $product->increment('p_qty');
                             }
 
                             $product->update();
@@ -517,8 +514,12 @@ class InvoiceItem extends Component
                     $this->returnPaidBackToStock();
                 }
 
-                if (!empty($this->removedItems) || !empty($returnBackToInvoiceItems)) {
-                    $this->returnSelectedItems($this->removedItems, $returnBackToInvoiceItems);
+                if (!empty($this->removedItems)) {
+                    $this->deleteRemovedItems($this->removedItems);
+                }
+
+                if (!empty($returnBackToInvoiceItems)) {
+                    $this->returnSelectedItems([], $returnBackToInvoiceItems);
                 }
             }
 
@@ -576,7 +577,7 @@ class InvoiceItem extends Component
             'invoice_id' => $this->invoiceId,
             'firstname' => $this->customer['b_firstname'],
             'lastname'  => $this->customer['b_lastname'],
-            'email'     => $this->customer['email'],
+            'email'     => $this->customer['b_email'],
         ];
 
         foreach ($this->items as $product) {
@@ -660,6 +661,48 @@ class InvoiceItem extends Component
                 }
             }
         }
+    }
+
+    /**
+     * Permanently remove lines deleted in the invoice editor.
+     *
+     * Deleting a line is different from changing its quantity to zero: a
+     * deleted line must not be represented by an order return (or credit),
+     * while its inventory still needs to be restored.
+     */
+    protected function deleteRemovedItems(array $removedItems): void
+    {
+        $method = $this->invoice?->method
+            ?? \DB::table('orders')->where('id', $this->invoiceId)->value('method');
+
+        collect($removedItems)
+            ->filter(fn ($item) => !empty($item['op_id']))
+            ->unique('op_id')
+            ->each(function ($item) use ($method) {
+                $orderProduct = \DB::table('order_product')
+                    ->where('order_id', $this->invoiceId)
+                    ->where('id', $item['op_id'])
+                    ->first();
+
+                if (!$orderProduct) {
+                    return;
+                }
+
+                if ((int) $orderProduct->product_id !== 491) {
+                    $product = Product::where('id', $orderProduct->product_id);
+
+                    if ($method === 'Invoice' && (int) $orderProduct->qty > 0) {
+                        $product->increment('p_qty', (int) $orderProduct->qty, ['p_status' => 0]);
+                    } else {
+                        $product->update(['p_status' => 0]);
+                    }
+                }
+
+                \DB::table('order_product')
+                    ->where('order_id', $this->invoiceId)
+                    ->where('id', $orderProduct->id)
+                    ->delete();
+            });
     }
 
     protected function returnSelectedItems($removedItems, $returnBackToInvoiceItems = []) {
