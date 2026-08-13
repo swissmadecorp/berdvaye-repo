@@ -555,9 +555,7 @@ class InvoiceItem extends Component
                 $this->creditInvoiceOverpayment($order, (float) $total);
             }
 
-            if ($order->status != 3 && $paidAmount >= (float) $total && $paidAmount > 0)
-                $status = 1;
-            else $status = $order->status;
+            $status = $this->invoiceStatusAfterSave($order, $paidAmount, (float) $total);
 
             $order->update([
                 'subtotal' => $this->totalPrice,
@@ -751,6 +749,21 @@ class InvoiceItem extends Component
         }
 
         $this->creditAmount = (float) $creditAmount;
+    }
+
+    protected function invoiceStatusAfterSave(Order $order, float $paidAmount, float $total): int
+    {
+        if ($order->status == 3) {
+            return 3;
+        }
+
+        if ($paidAmount >= $total && $paidAmount > 0) {
+            return 1;
+        }
+
+        // A previously paid invoice becomes open again when edits increase
+        // its total beyond the payments received.
+        return 0;
     }
 
     protected function returnSelectedItems($removedItems, $returnBackToInvoiceItems = []) {
