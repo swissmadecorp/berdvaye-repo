@@ -139,7 +139,11 @@
 
                                         <a @click="$dispatch('load-invoice', { id: {{$product->pivot->order_id}} })" data-id="{{$product->pivot->order_id}}" class="editinvoice cursor-pointer dark:hover:text-white text-sky-600">{{$product->pivot->order_id}}</a>
                                     </th>
+                                    @if ($invoice->customers->first())
                                     <td class="px-6 py-4">{{ $invoice->customers->first()->company }}</td>
+                                    @else
+                                    <td class="px-6 py-4">No Customer</td>
+                                    @endif
                                     <td class="px-6 py-4">{{ $invoice->method }}</td>
                                     <td class="px-6 py-4">{{ $invoice->created_at->format('m/d/Y')}}</td>
                                     <td class="px-6 py-4">{{ $product->pivot->serial }}</td>
