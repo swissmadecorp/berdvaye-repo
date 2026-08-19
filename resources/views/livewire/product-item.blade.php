@@ -13,7 +13,7 @@
 @endpush
 
     <!-- Berdvaye product-item -->
-    <div wire:ignore.self id="slideover-product-container" class="fixed inset-0 w-full h-full invisible z-[51]" >
+    <div x-data="{ activeProductTab: 'product' }" wire:ignore.self id="slideover-product-container" class="fixed inset-0 w-full h-full invisible z-[51]" >
         <div wire:ignore.self id="slideover-product-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
         <div tabindex="0" wire:ignore.self id="slideover-product" class="border absolute duration-500 ease-out transition-all h-full bg-white right-0 top-0 translate-x-full md:w-[665px] w-[390px] dark:bg-gray-800 overflow-x-hidden">
             <div class="bg-gray-200 dark:bg-gray-600 dark:text-gray-300 p-3 text-2xl text-gray-500">
@@ -29,21 +29,20 @@
                 </svg>
             </div>
             <div class="border-b border-gray-200 dark:border-gray-700">
-                <ul class="flex flex-wrap dark:bg-gray-900 text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-500 border-purple-600 dark:border-purple-500" data-tabs-inactive-classes="dark:border-transparent text-gray-500 hover:text-gray-600 dark:text-gray-400 border-gray-100 hover:border-gray-300 dark:border-gray-700 dark:hover:text-gray-300" role="tablist">
+                <ul class="flex flex-wrap dark:bg-gray-900 text-sm font-medium text-center" id="default-styled-tab" role="tablist">
                     <li class="me-2" role="presentation">
-                        <button wire:ignore.self class="inline-block p-4 border-b-2 rounded-t-lg" id="product-tab" data-tabs-target="#product" type="button" role="tab" aria-selected="true" aria-controls="profile">Product</button>
+                        <button wire:ignore.self x-on:click="activeProductTab = 'product'" :class="activeProductTab === 'product' ? 'text-purple-600 border-purple-600 dark:text-purple-500 dark:border-purple-500' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg" id="product-tab" type="button" role="tab" :aria-selected="activeProductTab === 'product'" aria-controls="product">Product</button>
                     </li>
 
                     <li x-data="{ ordercount: @entangle('totalorders')}" x-cloak class="me-2" :class="{'hidden': ordercount === 0}"
                         role="presentation">
-                        <button wire:ignore.self class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="
-                        -tab" data-tabs-target="#invoices" type="button" role="tab" aria-selected="false" aria-controls="invoices" >Invoices</button>
+                        <button wire:ignore.self x-on:click="activeProductTab = 'invoices'" :class="activeProductTab === 'invoices' ? 'text-purple-600 border-purple-600 dark:text-purple-500 dark:border-purple-500' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="invoices-tab" type="button" role="tab" :aria-selected="activeProductTab === 'invoices'" aria-controls="invoices">Invoices</button>
                     </li>
                 </ul>
             </div>
 
             <div id="default-styled-tab-content" class="dark:bg-gray-800">
-                <div class="p-4 rounded-lg dark:bg-gray-800" id="product" role="tabpanel" aria-labelledby="product-tab">
+                <div x-show="activeProductTab === 'product'" class="p-4 rounded-lg dark:bg-gray-800" id="product" role="tabpanel" aria-labelledby="product-tab">
                     <form>
                         <div class="flex justify-between text-sm text-gray-600">
                             <div class="dark:text-gray-200">
@@ -104,7 +103,7 @@
                     </form>
                 </div>
 
-                <div class="hidden p-4 rounded-lg dark:bg-gray-800" id="invoices" role="tabpanel" aria-labelledby="invoices-tab">
+                <div x-cloak x-show="activeProductTab === 'invoices'" class="p-4 rounded-lg dark:bg-gray-800" id="invoices" role="tabpanel" aria-labelledby="invoices-tab">
                     <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
                         @if ($totalorders)
                         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
@@ -139,7 +138,11 @@
 
                                         <a @click="$dispatch('load-invoice', { id: {{$product->pivot->order_id}} })" data-id="{{$product->pivot->order_id}}" class="editinvoice cursor-pointer dark:hover:text-white text-sky-600">{{$product->pivot->order_id}}</a>
                                     </th>
+                                    @if ($invoice->customers->first())
                                     <td class="px-6 py-4">{{ $invoice->customers->first()->company }}</td>
+                                    @else
+                                    <td class="px-6 py-4">No Customer</td>
+                                    @endif
                                     <td class="px-6 py-4">{{ $invoice->method }}</td>
                                     <td class="px-6 py-4">{{ $invoice->created_at->format('m/d/Y')}}</td>
                                     <td class="px-6 py-4">{{ $product->pivot->serial }}</td>

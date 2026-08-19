@@ -226,6 +226,8 @@ class Invoices extends Component
         $order = Order::find($id);
         if ($order->transaction_id)
             $response = $this->refundInvoice($order);
+        else
+            $response = ['success' => true];
 
         if (isset($order->payments)) {
             if ($order->payments->count()) {
