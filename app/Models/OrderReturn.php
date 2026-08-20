@@ -9,6 +9,7 @@ class OrderReturn extends Model
     protected $table = 'order_returns';
     protected $guarded = [];
     public $timestamps = true;
+    const UPDATED_AT = null;
 
     public function orders() {
         return $this->belongsToMany(Order::class);
