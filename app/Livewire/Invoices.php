@@ -191,6 +191,7 @@ class Invoices extends Component
         $order=Order::find($id);
         $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
 
+        \Log::info('Sending WhatsApp message for order ID: ');
         $ret = $printOrder->print($order,'sendText'); // Print newly created proforma/order.
         // $arr=$this->print($id,'emailmultiple');
 
