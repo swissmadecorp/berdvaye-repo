@@ -191,7 +191,7 @@ class Invoices extends Component
         $order=Order::find($id);
         $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
 
-        $ret = $printOrder->print($order,'emailmultiple'); // Print newly created proforma/order.
+        $ret = $printOrder->print($order,'sendText'); // Print newly created proforma/order.
         // $arr=$this->print($id,'emailmultiple');
 
         // dd($ret);
