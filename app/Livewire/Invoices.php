@@ -36,6 +36,142 @@ class Invoices extends Component
     public $status = 0;
     public $sql = '';
 
+    private function sendWhatsApp($filename, $handshake, $phone = null) {
+        $token = config('chatgpt.FACEBOOK_API');
+        $phone_number_id = '580826665103968';
+        $phoneTo = $this->textPerson ?? $phone;
+
+        // Normalize (remove non-digits if you want to be safer)
+        $phoneTo = preg_replace('/\D/', '', $phoneTo);
+
+        // Validate
+        if (empty($phoneTo)) {
+            LivewireAlert::title("Phone number was not specified. Please enter phone number and try again!")
+                ->error()->toast()->show();
+            return;
+        }
+
+        $phoneTo = $phoneTo[0] === '1' ? $phoneTo : '1' . $phoneTo;
+
+        if ($handshake==0) {
+
+            $headers = [
+                'Authorization: Bearer ' . $token,
+            ];
+
+            $filePath = public_path()."/uploads/$filename"; // Path to your local file
+
+            $ch = curl_init("https://graph.facebook.com/v21.0/$phone_number_id/media");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $data = [
+                'messaging_product' => 'whatsapp', // Include the messaging_product parameter
+                'file' => new \CURLFile($filePath,'application/pdf',$filename),
+                'type' => 'application/pdf', // MIME type of the file
+            ];
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            $mediaId = 0;
+
+            if ($httpCode === 200) {
+                $responseData = json_decode($response, true);
+                $mediaId = $responseData['id']; // Retrieve the media_id
+                // echo "Media uploaded successfully. Media ID: " . $mediaId;
+            } else {
+                $error="Failed to upload media. Response: " . $response;
+                $this->dispatch('itemMsg', $error);
+            }
+
+            $headers = [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json',
+            ];
+
+            $post = [
+                "messaging_product" => "whatsapp",
+                "to" => $phoneTo,
+                "type" => "template",
+                "template" => [
+                    "name" => 'invoice_copy', // <--- Use the NEW template name here
+                    "language" => ["code" => "en_US"], // Try 'en' instead of 'en_US'
+                    "components" => [
+                        [
+                            "type" => "header",
+                            "parameters" => [
+                                [
+                                    "type" => "document",
+                                    "document" => [
+                                        "id" => $mediaId,
+                                        "filename" => $filename
+                                    ]
+                                ]
+                            ]
+                        ]
+                        // Note: No 'body' component here if your template has no {{1}}
+                    ]
+                ]
+            ];
+
+            $ch = curl_init("https://graph.facebook.com/v21.0/$phone_number_id/messages");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post)); // Send JSON data
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $response = curl_exec($ch);
+            // dd($response);
+            if (curl_errno($ch)) {
+                // Handle CURL error
+                $error = 'Error: ' . curl_error($ch);
+                $this->dispatch('itemMsg', $error);
+            } else {
+                $this->dispatch('itemMsg', 'Message has been sent!');
+            }
+            curl_close($ch);
+            unlink(base_path()."/public/uploads/$filename"); // delete file after sending a file
+        } else {
+            $headers = [
+                'Authorization: Bearer ' . $token,
+                'Content-Type: application/json',
+            ];
+
+            $post = [
+                "messaging_product" => "whatsapp",
+                "recipient_type" => "individual",
+                "to" => $phoneTo,
+                "type" => "template",
+                "template" => [
+                    "name" => 'invitation_template', /* Only if using uploaded media */
+                    "language" => ["code" => 'en_US'],
+                ]
+            ];
+
+            $ch = curl_init("https://graph.facebook.com/v21.0/$phone_number_id/messages");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post)); // Send JSON data
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            $response = curl_exec($ch);
+
+            if (curl_errno($ch)) {
+                // Handle CURL error
+                $error = 'Error: ' . curl_error($ch);
+                $this->dispatch('itemMsg', $error);
+            } else {
+                $this->dispatch('itemMsg', 'A template has been executed and sent!');
+            }
+            curl_close($ch);
+        }
+
+        $this->textPerson = null; // Clear the input after sending
+    }
+
     public function doSort($column) {
         if ($this->sortBy === $column) {
             $this->sortDirection = $this->sortDirection == "ASC" ? 'DESC' : 'ASC';
@@ -58,6 +194,11 @@ class Invoices extends Component
     public function setStatus($status) {
         $this->status = $status;
         $this->resetPage();
+    }
+
+    public function balanceForOrder(Order $order): float
+    {
+        return (float) $order->total - (float) $order->payments->sum('amount');
     }
 
     public function loadInvoice($id) {
@@ -109,7 +250,7 @@ class Invoices extends Component
             $order->update();
         }
 
-        LivewireAlert::title("Successfully emailed invoice")->success()->toast()->show();
+        LivewireAlert::title("Successfully emailed invoice!")->error()->toast()->show();
         // request()->session()->flash('message', "Successfully emailed invoice!");
     }
 
@@ -226,8 +367,7 @@ class Invoices extends Component
         $order = Order::find($id);
         if ($order->transaction_id)
             $response = $this->refundInvoice($order);
-        else
-            $response = ['success' => true];
+        else $response = ['success' => true];
 
         if (isset($order->payments)) {
             if ($order->payments->count()) {
@@ -270,8 +410,6 @@ class Invoices extends Component
 
     public function render()
     {
-        $totalCost = 0;
-
         $columns = ['orders.id','b_company','b_lastname','b_firstname', 's_company','method','product_name', 'serial'];
         $searchTerm = $this->generateSearchQuery($this->search, $columns);
         $status = $this->status;
@@ -293,23 +431,9 @@ class Invoices extends Component
             ->distinct() // If the join causes duplicate orders due to multiple matching products
             ->orderBy('orders.id', 'desc');
 
-        if ($this->status != 1)
-            $totalCost = $orderQuery->sum('total');
-
-        // $orders = $orders->paginate(perPage: 10);
-        if ($this->status != 1) {
-            foreach ($orderQuery->get() as $order) {
-                if ($order->payments) {
-                    $totalCost -= $order->payments->sum('amount');
-                }
-
-
-                if ($order->orderReturns->count()) {
-                    foreach ($order->orderReturns as $returns)
-                        $totalCost -= ($returns->pivot->amount*$returns->pivot->qty);
-                }
-            }
-        }
+        $totalCost = (clone $orderQuery)
+            ->get()
+            ->sum(fn (Order $order) => $this->balanceForOrder($order));
 
         $total = $orderQuery->getQuery()->distinct('orders.id')->count('orders.id');
         $orders = $orderQuery->paginate(10, ['*'], 'page', null)->withPath('')->appends(request()->query());

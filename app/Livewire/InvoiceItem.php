@@ -305,10 +305,25 @@ class InvoiceItem extends Component
 
         $this->memoTransfer = true;
         $this->customer['method'] = "Invoice";
-        $this->customer['po'] = "FROM MEMO";
+        $this->customer['po'] = "FROM MEMO {$this->invoiceId}";
 
         // $this->saveInvoice();
         // $this->clearFields();
+    }
+
+    public function cancelMemoTransfer(): void
+    {
+        if (!$this->memoTransfer || !$this->invoiceId) {
+            return;
+        }
+
+        $memoId = $this->invoiceId;
+
+        $this->memoTransfer = false;
+        $this->removedItems = [];
+        $this->items = collect([]);
+
+        $this->loadInvoice($memoId);
     }
 
     public function updateItemImage($id,$newImage) {
@@ -399,7 +414,11 @@ class InvoiceItem extends Component
 
             $product_ids=array();
             $transferredMemoItemIds = [];
+            $returnedItems = [];
             $returnBackToInvoiceItems = [];
+            $returnedProductIds = (!$this->memoTransfer && $this->invoiceId)
+                ? OrderReturn::where('order_id', $this->invoiceId)->pluck('product_id')->map(fn ($id) => (int) $id)->all()
+                : [];
 
             $this->removeOriginallyZeroQuantityItemsFromMemo();
 
@@ -443,14 +462,30 @@ class InvoiceItem extends Component
 
                             $order->products()->attach($product->id, $product_array);
 
+                            $newOrderProductId = (int) \DB::table('order_product')
+                                ->where('order_id', $order->id)
+                                ->where('product_id', $product->id)
+                                ->orderByDesc('id')
+                                ->value('id');
+
                             if ($this->memoTransfer && !empty($item['op_id'])) {
                                 $transferredMemoItemIds[] = $item['op_id'];
                             }
 
                             if ($this->customer['method'] == 'Invoice') {
                                 if ($product_id != 491) {
-                                    $product->p_status=3; // mark as sold
-                                    $product->decrement('p_qty');
+                                    $originalQty = (int) ($item['original_qty'] ?? 0);
+
+                                    if ((int) $qty === 0 && $originalQty > 0 && $this->memoTransfer) {
+                                        $returnedItem = $item;
+                                        $returnedItem['op_id'] = $newOrderProductId;
+                                        $returnedItems[] = $returnedItem;
+                                        $product->p_status = 0;
+                                    } elseif ((int) $qty > 0) {
+                                        $product->p_status=3; // mark as sold
+                                        $product->decrement('p_qty');
+                                    }
+
                                     $product->update();
                                 }
                             } elseif ($this->customer['method'] == 'On Memo') {
@@ -475,33 +510,50 @@ class InvoiceItem extends Component
                                 'serial' => $serial,
                                 'product_name' => $product_name,
                                 'img_name' => $img_name
-                            ]);
+                        ]);
 
                         $method = $this->customer['method'];
-                        $originalQty = (int) ($item['original_qty'] ?? $product->pivot->qty ?? 0);
+                        $isQuantityReturn = $this->isQuantityReturn($item, $method);
+                        $isReturnReversal = $this->isQuantityReturnReversal($item, $method, $returnedProductIds);
 
-                        if ($this->invoice->status == 1) { // sold page
-                            $product->p_status=0;
-                            if ($qty == 0 && $originalQty > 0 && $method == "Invoice") {
-                                $product->increment('p_qty');
+                        if ($isReturnReversal) {
+                            $returnBackToInvoiceItems[] = $product_id;
+
+                            if ($method == "Invoice") {
+                                $product->p_status = 3;
+                                $product->decrement('p_qty');
+                            } else {
+                                $product->p_status = 1;
                             }
+
+                            $product->update();
+                        } elseif ($this->invoice->status == 1) { // sold page
+                            if ($isQuantityReturn) {
+                                if ($method == "Invoice") {
+                                    $product->increment('p_qty');
+                                }
+
+                                $product->p_status = 0;
+                                $returnedItems[] = $item;
+                            } elseif ($method == "On Memo" && (int) $qty > 0) {
+                                $product->p_status = 1;
+                            }
+
                             $product->update();
                         } elseif ($this->invoice->status == 0) { // open invoice/memo
-                            $product->p_status=0;
-                            if ($qty == 0 && $originalQty > 0 && $method == "Invoice") {
-                                $product->increment('p_qty');
+                            if ($isQuantityReturn) {
+                                if ($method == "Invoice") {
+                                    $product->increment('p_qty');
+                                }
+
+                                $product->p_status = 0;
+                                $returnedItems[] = $item;
+                            } elseif ($method == "On Memo" && (int) $qty > 0) {
+                                $product->p_status = 1;
                             }
 
                             $product->update();
                         } elseif ($this->invoice->status == 3) { // returned
-                            if ($qty == 1) {
-                                if ($method == "Invoice") {
-                                    $returnBackToInvoiceItems[] = $product_id;
-
-                                    $product->p_status=1;
-                                    $product->decrement('p_qty');
-                                }
-                            }
                             $product->update();
                         }
 
@@ -510,7 +562,7 @@ class InvoiceItem extends Component
             }
 
             if (!$this->memoTransfer) {
-                if (!empty($returnBackToInvoiceItems)) {
+                if (!empty($returnBackToInvoiceItems) && ($this->customer['method'] ?? null) === 'Invoice') {
                     $this->returnBackToInvoice($returnBackToInvoiceItems);
                 }
 
@@ -522,12 +574,16 @@ class InvoiceItem extends Component
                     $this->deleteRemovedItems($this->removedItems);
                 }
 
-                if (!empty($returnBackToInvoiceItems)) {
-                    $this->returnSelectedItems([], $returnBackToInvoiceItems);
+                if (!empty($returnedItems) || !empty($returnBackToInvoiceItems)) {
+                    $this->returnSelectedItems($returnedItems, $returnBackToInvoiceItems);
                 }
             }
 
             if ($this->memoTransfer) {
+                if (!empty($returnedItems)) {
+                    $this->returnSelectedItems($returnedItems, [], $order->id);
+                }
+
                 $this->updateOriginalMemoAfterTransfer($transferredMemoItemIds);
             }
 
@@ -766,61 +822,91 @@ class InvoiceItem extends Component
         return 0;
     }
 
-    protected function returnSelectedItems($removedItems, $returnBackToInvoiceItems = []) {
+    protected function returnSelectedItems($returnedItems, $returnBackToInvoiceItems = [], ?int $orderId = null): void
+    {
+        $orderId ??= $this->invoiceId;
 
-        $return = OrderReturn::where('order_id', $this->invoiceId)->first();
-        $totalAmount = 0; //
+        if (!empty($returnedItems)) {
+            $orderReturn = OrderReturn::where('order_id', $orderId)->first();
+            $return = $orderReturn
+                ? Returns::find($orderReturn->returns_id)
+                : null;
 
-        $invoice = $this->invoice;
+            if (!$return) {
+                $return = Returns::create(['comment' => null]);
+            }
 
-        if (!$return) {
-            $return = Returns::create ([
-                'comment' => null
-            ]);
-            $total = $this->invoice->subtotal;
-        } else {
-            $return=Returns::find($return->returns_id);
+            foreach (collect($returnedItems)->unique('op_id') as $item) {
+                $productId = (int) $item['id'];
 
-            $total = $invoice->returns->sum('pivot.amount');
-            $total = $invoice->subtotal-$total;
+                if ($productId === 491) {
+                    continue;
+                }
+
+                $originalQty = (int) ($item['original_qty'] ?? 0);
+                $currentQty = (int) ($item['qty'] ?? 0);
+                $returnedQty = max(0, $originalQty - $currentQty);
+
+                if ($returnedQty === 0) {
+                    continue;
+                }
+
+                $price = (float) \DB::table('order_product')
+                    ->where('order_id', $orderId)
+                    ->where('id', $item['op_id'])
+                    ->value('price');
+
+                OrderReturn::updateOrCreate(
+                    [
+                        'order_id' => $orderId,
+                        'returns_id' => $return->id,
+                        'product_id' => $productId,
+                    ],
+                    [
+                        'amount' => $price,
+                        'qty' => $returnedQty,
+                    ]
+                );
+            }
         }
 
-        if (!empty($removedItems)) {
-            foreach ($removedItems as $i => $item) {
-                $product_id = $item['id'];
-                $product = $invoice->products->find($product_id);
-                if ($product_id != 491) {
-                    $amount=($product->pivot->price*$product->pivot->qty);
-                    $totalAmount += $amount;
-                    $total -= ($product->pivot->price*$product->pivot->qty);
+        if (!empty($returnBackToInvoiceItems)) {
+            $returnIds = OrderReturn::where('order_id', $orderId)
+                ->whereIn('product_id', array_unique($returnBackToInvoiceItems))
+                ->pluck('returns_id')
+                ->unique();
 
-                    $invoice->returns()->attach($return,[
-                        'product_id' => $product_id,
-                        'order_id' => $this->invoiceId,
-                        'amount' => $amount,
-                        'qty' => 1,
-                    ]);
+            OrderReturn::where('order_id', $orderId)
+                ->whereIn('product_id', array_unique($returnBackToInvoiceItems))
+                ->delete();
 
-                    // dd($invoice->returns());
-                    $product->update([
-                        'p_qty' => 1,
-                        'p_status' => 0
-                    ]);
-                } else {
-                    $product->pivot->delete();
+            foreach ($returnIds as $returnId) {
+                if (!OrderReturn::where('returns_id', $returnId)->exists()) {
+                    Returns::where('id', $returnId)->delete();
                 }
             }
-        } elseif (!empty($returnBackToInvoiceItems)) {
-            $invoice->returns()->detach($return);
-            $return->delete();
         }
-
     }
 
     private function allItemsQuantityZero() {
         return $this->items->every(function ($item) {
             return empty($item['qty']) || $item['qty'] == 0;
         });
+    }
+
+    protected function isQuantityReturn(array $item, string $method): bool
+    {
+        return in_array($method, ['Invoice', 'On Memo'], true)
+            && (int) ($item['qty'] ?? 0) === 0
+            && (int) ($item['original_qty'] ?? 0) > 0;
+    }
+
+    protected function isQuantityReturnReversal(array $item, string $method, array $returnedProductIds): bool
+    {
+        return in_array($method, ['Invoice', 'On Memo'], true)
+            && (int) ($item['qty'] ?? 0) > 0
+            && (int) ($item['original_qty'] ?? 0) === 0
+            && in_array((int) ($item['id'] ?? 0), $returnedProductIds, true);
     }
 
     protected function updateOriginalMemoAfterTransfer(array $transferredMemoItemIds): void
@@ -836,8 +922,22 @@ class InvoiceItem extends Component
                 ->delete();
         }
 
-        $subtotal = (float) \DB::table('order_product')
-            ->where('order_id', $this->invoiceId)
+        $remainingItems = \DB::table('order_product')
+            ->where('order_id', $this->invoiceId);
+
+        $remainingItemCount = (clone $remainingItems)->count();
+        $allRemainingQuantitiesZero = $remainingItemCount > 0
+            && !(clone $remainingItems)->where('qty', '<>', 0)->exists();
+
+        if ($remainingItemCount === 0) {
+            $status = 2; // Transferred
+        } elseif ($allRemainingQuantitiesZero) {
+            $status = 3; // Returned
+        } else {
+            $status = 0; // Open memo
+        }
+
+        $subtotal = (float) (clone $remainingItems)
             ->selectRaw('COALESCE(SUM(price * qty), 0) AS subtotal')
             ->value('subtotal');
 
@@ -849,6 +949,7 @@ class InvoiceItem extends Component
         $this->invoice->update([
             'subtotal' => $subtotal,
             'total' => number_format($total, 2, '.', ''),
+            'status' => $status,
         ]);
     }
 
@@ -1087,7 +1188,7 @@ class InvoiceItem extends Component
             $total = ($this->totalPrice -$discount + $freight );
             $total = $total + ($total) * ($tax/100);
 
-            if ($this->returnAmount)
+            if ($this->returnAmount && $this->shouldApplyReturnAmountToGrandTotal())
                 $total += $this->returnAmount;
 
             $this->grandtotal = '$'.number_format($total,2);
@@ -1097,6 +1198,19 @@ class InvoiceItem extends Component
                 $this->totalPrice = $total;
             }
         }
+    }
+
+    protected function shouldApplyReturnAmountToGrandTotal(): bool
+    {
+        $method = $this->customer['method'] ?? $this->invoice?->method;
+
+        if ($method !== 'Invoice' || !$this->invoice) {
+            return false;
+        }
+
+        $paidAmount = (float) $this->invoice->payments->sum('amount');
+
+        return $paidAmount > 0 && $paidAmount >= (float) $this->invoice->total;
     }
 
     public function returnItem($data) {
