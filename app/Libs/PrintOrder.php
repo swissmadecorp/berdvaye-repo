@@ -757,7 +757,12 @@ Invoiced
             unlink(public_path().'/uploads/'.$filename.'.pdf');
             //unlink(public_path().'/uploads/'.$filename.'.jpg');
             return [public_path().'/uploads/'.$filename.'.pdf',$order];
-        } elseif ($output=='Invoice_'.$order->id) {
+        } elseif ($output == "sendText") {
+            \Log::info('Sending text message for order: ' . $order->id);
+            PDF::Output(public_path().'/uploads/'.$filename.'.pdf', 'F');
+            return [public_path().'/uploads/'.$filename.'.pdf',$order];
+
+        }elseif ($output=='Invoice_'.$order->id) {
             //Close and output PDF document
             PDF::Output(public_path('/'.$filename.'.pdf', 'F'));
             $img = new Imagick();
