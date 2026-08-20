@@ -8,9 +8,12 @@
     <!-- Do what you can, with what you have, where you are. - Theodore Roosevelt -->
     <div x-data="{ activeInvoiceTab: 'customer-info' }" wire:ignore.self id="slideover-invoice-container" class="fixed inset-0 w-full h-full invisible z-50">
         <div wire:ignore.self id="slideover-invoice-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
-        <div wire:ignore.self id="slideover-invoice" class="absolute duration-500 ease-out transition-all h-full bg-white right-0 top-0 translate-x-full overflow-y-scroll md:w-full w-[390px] dark:bg-gray-900" >
+        <div wire:ignore.self id="slideover-invoice" class="absolute duration-500 ease-out transition-all h-full bg-white right-0 top-0 translate-x-full overflow-y-scroll md:w-full w-[390px] dark:bg-gray-900 {{ $memoTransfer ? 'ring-4 ring-inset ring-amber-400' : '' }}" >
             <div class="bg-gray-200 p-3 dark:bg-gray-600 dark:text-gray-300 text-2xl text-gray-500">
-                @if ($invoiceId)
+                @if ($memoTransfer)
+                    <span>Create Invoice from Memo #{{$invoiceId}}</span>
+                    <span class="ml-2 inline-flex align-middle rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900 dark:text-amber-200">Transfer Mode</span>
+                @elseif ($invoiceId)
                     Edit Invoice #{{$invoiceId}}
                 @else
                     New Item
@@ -32,6 +35,13 @@
                     </li>
                 </ul>
             </div>
+
+            @if ($memoTransfer)
+                <div class="m-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100" role="status">
+                    <div class="font-semibold">You are creating a new invoice from Memo #{{$invoiceId}}.</div>
+                    <div class="mt-1 text-sm">All items shown below will be transferred to the new invoice. Select <strong>Leave on Memo</strong> for any item you do not want to invoice.</div>
+                </div>
+            @endif
 
             <div id="default-styled-tab-content">
             <div wire:loading.delay.long class="fixed z-50">
@@ -161,7 +171,7 @@
                                                 {{ $item['serial'] }}
                                             @endif
                                         </td>
-                                        <td class="px-4 py-4"><a href="#" wire:click.prevent="removeSingleItemById({{ $index }})" class="dark:hover:text-gray-300 font-medium inline-flex items-center justify-center rounded-lg text-base">Remove</a></td>
+                                        <td class="px-4 py-4"><a href="#" wire:click.prevent="removeSingleItemById({{ $index }})" class="dark:hover:text-gray-300 font-medium inline-flex items-center justify-center rounded-lg text-base">{{ $memoTransfer ? 'Leave on Memo' : 'Remove' }}</a></td>
                                     </tr>
                                     <tr>
                                     <td colspan="10">
@@ -187,7 +197,7 @@
                             </table>
 
                             <div class="pt-4">
-                                @if ($returnAmount)
+                                @if ($returnAmount && !$memoTransfer)
                                 <div class="grid gap-2 mb-2 md:grid-cols-3">
                                     <div></div>
                                     <div></div>
@@ -350,6 +360,9 @@
                             @endif
                             <button wire:click="saveInvoice()" type="button" class="text-white mt-4 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">{{$buttonText}}</button>
                             @endrole
+                            @if ($memoTransfer)
+                            <button wire:click="cancelMemoTransfer()" x-on:click="activeInvoiceTab = 'customer-info'; scrollInvoiceToTop()" type="button" class="mt-4 ml-2 rounded-lg border border-gray-400 bg-white px-5 py-2.5 text-center text-sm font-medium text-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-200 dark:focus:ring-gray-600">Cancel Transfer</button>
+                            @endif
                             @if (isset($customer['method']) && $customer['method'] == "On Memo")
                             <button wire:click="TransferToInvoice()" x-on:click="scrollInvoiceToTop()" type="button" class="text-white mt-4 bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Make Invoice</button>
                             @endif

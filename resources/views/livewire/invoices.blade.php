@@ -154,14 +154,9 @@ if ($event.key === '=') {
                 </head>
                 <tbody>
 
-                <?php $counter = 0; $action = 'unpaid'; ?>
+                <?php $counter = 0; ?>
                 @foreach($orders as $order)
                 <?php
-                    $subtotal = 0;
-                    foreach ($order->orderReturns as $returns) {
-                        $subtotal += ($returns->pivot->amount*$returns->pivot->qty);
-                    }
-
                     $counter ++ ;$incomplete = '';
                     // $id = "prod-".$order->id;
                     // dd($id);
@@ -173,13 +168,7 @@ if ($event.key === '=') {
                         $cc_status = $order->cc_status;
                     else $status = orderStatus()->get($order->status);
 
-                    if ($action == 'paid') {
-                        $total = $order->payments->sum('amount');
-                    } else {
-                        $total = $order->total - $order->payments->sum('amount');
-                    }
-
-                    $total -= $subtotal;
+                    $total = $this->balanceForOrder($order);
                     $companyInfo = (!$order->b_firstname && !$order->b_lastname && $order->s_firstname && $order->s_lastname) ? '<b>'.$order->b_company . '</b>-'.$order->s_firstname . ' ' .$order->s_lastname .'*': $order->b_company;
                     $id = $order->id;
 
