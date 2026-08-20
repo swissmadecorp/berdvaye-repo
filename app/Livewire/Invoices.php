@@ -30,11 +30,22 @@ class Invoices extends Component
     #[Url(keep: true)]
     public $search = "";
 
+    public $whatsapptoken = "";
+    public $whatsAppNewToken = "";
+
     public $currentInvoiceId;
     public $textPerson;
     public $order = null;
     public $status = 0;
     public $sql = '';
+
+    public function updatedWhatsapptoken() {
+        $this->generateFacebookToken($this->whatsapptoken);
+    }
+
+    public function closeWhatsapp() {
+        $this->reset('whatsAppNewToken','whatsapptoken');
+    }
 
     private function sendWhatsApp($filename, $handshake, $phone = null) {
         $token = config('chatgpt.FACEBOOK_API');
@@ -170,6 +181,21 @@ class Invoices extends Component
         }
 
         $this->textPerson = null; // Clear the input after sending
+    }
+
+    public function sendText($handshake) {
+        // $ids=explode(',',$ids);
+        // $filename=array();
+        // dd($this->textPerson);
+        $id = $this->currentInvoiceId;
+        $order=Order::find($id);
+        $printOrder = new \App\Libs\PrintOrder(); // Create Print Object
+
+        $ret = $printOrder->print($order,'emailmultiple'); // Print newly created proforma/order.
+        // $arr=$this->print($id,'emailmultiple');
+
+        // dd($ret);
+        $this->sendWhatsApp($ret[0],$handshake,$order->b_phone);
     }
 
     public function doSort($column) {
