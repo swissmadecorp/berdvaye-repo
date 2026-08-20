@@ -208,7 +208,6 @@ class Invoices extends Component
     }
 
     public function setCurrentInvoiceId($id) {
-        dd('asdf');
         $this->currentInvoiceId = $id;
 
     }
