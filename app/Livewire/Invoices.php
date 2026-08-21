@@ -144,7 +144,7 @@ class Invoices extends Component
                 $this->dispatch('itemMsg', 'Message has been sent!');
             }
             curl_close($ch);
-            unlink(base_path()."/public/uploads/$filename"); // delete file after sending a file
+            \Log::infounlink(base_path(). $filename); // delete file after sending a file
         } else {
             $headers = [
                 'Authorization: Bearer ' . $token,
