@@ -70,7 +70,7 @@ class Invoices extends Component
                 'Authorization: Bearer ' . $token,
             ];
 
-            $filePath = public_path()."/uploads/$filename"; // Path to your local file
+            $filePath = $filename; // Path to your local file
 
             $ch = curl_init("https://graph.facebook.com/v21.0/$phone_number_id/media");
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -118,7 +118,7 @@ class Invoices extends Component
                                     "type" => "document",
                                     "document" => [
                                         "id" => $mediaId,
-                                        "filename" => $filename
+                                        "filename" => basename($filename)
                                     ]
                                 ]
                             ]
@@ -127,7 +127,7 @@ class Invoices extends Component
                     ]
                 ]
             ];
-
+dd($post);
             $ch = curl_init("https://graph.facebook.com/v21.0/$phone_number_id/messages");
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -136,8 +136,7 @@ class Invoices extends Component
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
             $response = curl_exec($ch);
-            dd($phone_number_id);
-            // dd($response);
+
             if (curl_errno($ch)) {
                 // Handle CURL error
                 $error = 'Error: ' . curl_error($ch);
