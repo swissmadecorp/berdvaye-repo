@@ -44,11 +44,16 @@
              if (duration > 0) {
                  // Animated close
                  $activeMenu.stop(true, true).animate({ opacity: 0 }, duration, function() {
-                     $activeMenu.addClass("hidden").removeData("active-button");
+                     $activeMenu.addClass("hidden")
+                         .removeData("active-button")
+                         .removeAttr("data-active-button");
                  });
              } else {
                  // Instant close
-                 $activeMenu.css('opacity', 0).addClass("hidden").removeData("active-button");
+                 $activeMenu.css('opacity', 0)
+                     .addClass("hidden")
+                     .removeData("active-button")
+                     .removeAttr("data-active-button");
              }
         }
     }
@@ -103,7 +108,9 @@
         if ($menu.is(":visible") && $menu.data("active-button") === $button[0]) {
             // Animated Toggle OFF
             $menu.stop(true, true).animate({ opacity: 0 }, settings.animationDuration, function() {
-                $menu.addClass("hidden").removeData("active-button");
+                $menu.addClass("hidden")
+                    .removeData("active-button")
+                    .removeAttr("data-active-button");
             });
             return;
         }
@@ -154,7 +161,9 @@
             top: topPosition + "px",
             left: leftPosition + "px",
             opacity: 0, // Prepare for fade-in
-        }).removeClass("hidden").data("active-button", $button[0]);
+        }).removeClass("hidden")
+          .attr("data-active-button", "true")
+          .data("active-button", $button[0]);
 
         $menu.stop(true, true).animate({
             opacity: 1
@@ -185,8 +194,10 @@
         }
 
         // clicking anywhere on the screen will close the menu
-        $(document).on("click", function () {
-            $menuInstance.addClass("hidden").removeData("active-button");
+        $(document).off("click.popupMenuDocument").on("click.popupMenuDocument", function () {
+            $menuInstance.addClass("hidden")
+                .removeData("active-button")
+                .removeAttr("data-active-button");
         });
 
         // 2. Global closure logic
