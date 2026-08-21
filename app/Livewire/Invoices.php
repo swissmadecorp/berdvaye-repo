@@ -129,12 +129,14 @@ class Invoices extends Component
             ];
 
             $ch = curl_init("https://graph.facebook.com/v21.0/$phone_number_id/messages");
+
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($post)); // Send JSON data
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
             $response = curl_exec($ch);
+            dd($phone_number_id);
             // dd($response);
             if (curl_errno($ch)) {
                 // Handle CURL error
