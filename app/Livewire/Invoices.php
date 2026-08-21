@@ -127,7 +127,7 @@ class Invoices extends Component
                     ]
                 ]
             ];
-dd($post);
+
             $ch = curl_init("https://graph.facebook.com/v21.0/$phone_number_id/messages");
 
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
