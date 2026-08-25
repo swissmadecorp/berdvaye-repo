@@ -581,6 +581,7 @@ class OrderItem extends Component
     }
 
     public function editProductRow($lineNumber,$newProduct) {
+
         $this->items = $this->items->map(function ($item) use ($lineNumber, $newProduct) {
             //echo($item['linenumber'] . ' '. $lineNumber . '\n');
             if ($item['linenumber'] === $lineNumber) {
@@ -595,7 +596,7 @@ class OrderItem extends Component
                 $item['id'] = $product->id;
                 $item['p_model'] = $product_model->p_model;
                 $item['product_name'] = $product_model->model_name;
-                $item['price'] = $product_model->p_retail / 2;
+                $item['price'] = $product_model->p_retail;
                 $item['cost'] = $product_model->p_retail;
                 $item['serial'] = $product->p_serial;
                 $item['image'] = $image;
