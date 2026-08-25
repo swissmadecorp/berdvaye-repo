@@ -211,6 +211,8 @@ class OrderItem extends Component
             $this->customer['b_state'] = $this->selectedBState;
             $this->customer['s_state'] = $this->selectedSState;
             // if (!$customer) {
+
+            dd($this->items);
             $data = array(
                 'cgroup' => $this->customerGroupId,
                 'firstname' => isset($this->customer['b_firstname']) ? $this->customer['b_firstname'] : "",
