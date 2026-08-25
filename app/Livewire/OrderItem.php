@@ -159,7 +159,7 @@ class OrderItem extends Component
             // Clear the 'op_id' property. You can set it to null or an empty string,
             // depending on your desired data type. null is generally better for a "cleared" state.
             $item['op_id'] = null;
-
+            $item['price'] = $item['cost'];
             return $item; // Return the modified item
         });
 
