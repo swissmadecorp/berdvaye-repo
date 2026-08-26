@@ -84,6 +84,22 @@ if (! function_exists('localize_us_number')) {
 
 if (! function_exists('PaymentsOptions')) {
     function PaymentsOptions() {
-        return collect(['Due upon receipt'=>'Due upon receipt','Net-10'=>'Net 10','Net-15'=>'Net 15','Net-30'=>'Net 30','Net-60'=>'Net 60','Net-90'=>'Net 90','Net-120'=>'Net 120','Net-180'=>'Net 180','None'=>'None','Amex'=>'American Express', 'Visa'=>'Visa','Discover'=>'Discover','MC'=>'Master Card']);
+        return collect([
+            'Due upon receipt'=>'Due upon receipt',
+            'Net-10'=>'Net 10',
+            'Net-15'=>'Net 15',
+            'Net-30'=>'Net 30',
+            'Net-60'=>'Net 60',
+            'Net-90'=>'Net 90',
+            'Net-120'=>'Net 120',
+            'Net-180'=>'Net 180',
+            'None'=>'None',
+            'Amex'=>'American Express',
+            'Visa'=>'Visa',
+            'Discover'=>'Discover',
+            'MC'=>'Master Card',
+            'card' => 'Credit Card',
+            'paypal' => 'PayPal',
+        ]);
     }
 }
