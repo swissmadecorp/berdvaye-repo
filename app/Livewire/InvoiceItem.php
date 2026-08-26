@@ -402,8 +402,8 @@ class InvoiceItem extends Component
                         $this->customer['emailed_tracking'] = 1;
 
                         $data = array(
-                            'to' => 'edba1970@yahoo.com',
-                            'customerName' => $this->customer['b_firstname'] . ' ' . $this->customer['b_lastname'],
+                            'to' => $this->customer['email'],
+                            'customerName' => ucwords($this->customer['b_firstname'] . ' ' . $this->customer['b_lastname']),
                             'tracking' => $this->customer['tracking'],
                             'template' => 'emails.emailtracking',
                             'subject' => 'Regarding your order!',
