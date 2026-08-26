@@ -212,7 +212,6 @@ class OrderItem extends Component
             $this->customer['s_state'] = $this->selectedSState;
             // if (!$customer) {
 
-            dd($this->customer);
             $data = array(
                 'cgroup' => $this->customerGroupId,
                 'firstname' => isset($this->customer['b_firstname']) ? $this->customer['b_firstname'] : "",
@@ -252,6 +251,15 @@ class OrderItem extends Component
             } else {
                 $order = Order::create($this->customer);
                 $order->customers()->attach($customer->id);
+
+                if ($this->customer["payment_options"] == "paypal" || $this->customer["payment_options"] == "card") {
+                    $order->update(['status' => 1]); // Mark order as paid
+                    Payment::create([
+                        'amount' => $this->customer['total'],
+                        'ref' => $this->customer['payment_options'],
+                        'order_id' => $order->id,
+                    ]);
+                }
             }
 
             $product_ids=array();
