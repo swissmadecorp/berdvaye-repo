@@ -5,6 +5,7 @@ namespace App\Livewire;
 
 use App\Models\Order;
 use Livewire\Component;
+use App\Mail\GMailer;
 use App\Models\Country;
 use App\Models\State;
 use App\Models\Customer;
@@ -379,12 +380,24 @@ class InvoiceItem extends Component
             $this->customer['b_state'] = $this->selectedBState;
             $this->customer['s_state'] = $this->selectedSState;
 
-            dd($this->customer);
-            if ($this->customer['payment_options'] == 'Credit Card') {
-                $this->customer['payment_options'] = 'card';
-            } elseif ($this->customer['payment_options'] == 'PayPal') {
-                $this->customer['payment_options'] = 'paypal';
+            if ($this->customer['payment_options'] == 'card' || $this->customer['payment_options'] == 'paypal') {
+                if ($this->customer['tracking'] != '' && $this->customer['emailed_tracking'] != 1) {
+                    $this->customer['emailed_tracking'] = 1;
+                    $data = array(
+                        'to' => 'edba1970@yahoo.com',
+                        'customerName' => $this->customer['b_firstname'] . ' ' . $this->customer['b_lastname'],
+                        'tracking' => $this->customer['tracking'],
+                        'template' => 'emails.emailtracking',
+                        'subject' => 'Regarding your order!',
+                    );
+
+                    $gmail = new GMailer($data);
+                    $gmail->send();
+
+                }
             }
+
+            dd($this->customer);
             $data = array(
                 'cgroup' => $this->customerGroupId,
                 'firstname' => isset($this->customer['b_firstname']) ? $this->customer['b_firstname'] : "",

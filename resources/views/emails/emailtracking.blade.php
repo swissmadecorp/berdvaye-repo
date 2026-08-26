@@ -1,16 +1,27 @@
 <html>
 <head></head>
   <body>
-    <h1>Good News!</h1>
-    <p>We would like you to know that your item has been shipped and if there is no issues with the delivery, {{$country}}</p>
-    <p>Please make sure that someone is at the premise to sign for the package.</p>
-    <p>Your tracking number is: {{$tracking}}</p>
+    Dear {{$customerName}},
+
+    <p>Thank you for choosing Berd Vay’e.</p>
+
+    <p>We are pleased to let you know that your Lucite® sculpture has been successfully shipped and is now on its way to you. Your FedEx tracking number is {{$tracking}}</p>
+
     <p>You can also click the link below</p>
-    <p><a href="https://www.fedex.com/fedextrack/?trknbr={{$tracking}}">https://www.fedex.com/fedextrack/?trknbr=396920144286{{$tracking}}</a></p>
-    <p>Thank you,</p>
-    <img src="https://www.berdvaye.com/images/logo_berdvaye-bl.png" alt="" style="width: 140px" /><br>
-    <p>Berdvaye Inc.<br>
-    www.berdvaye.com </p>
-    <hr>
+    <p><a href="https://www.fedex.com/fedextrack/?trknbr={{$tracking}}">https://www.fedex.com/fedextrack/?trknbr={{$tracking}}</a></p>
+
+    <p>Your Berd Vay’e sculpture represents our passion for preserving the history and artistry of fine watchmaking. Vintage horological components are carefully restored, polished, and meticulously positioned within crystal-clear Lucite®, transforming pieces of timekeeping history into a distinctive work of art.</p>
+
+    <p>We hope your new sculpture becomes a treasured addition to your collection and a piece you will enjoy for many years to come.</p>
+
+    <p>It has been our pleasure preparing your piece for its journey to you. Should you have any questions regarding your shipment or your Berd Vay’e sculpture, please do not hesitate to contact us.</p>
+
+    <p>Thank you again for becoming part of the Berd Vay’e story. We sincerely appreciate your business and hope you enjoy your new piece.</p>
+
+    <p>Warm regards,</p>
+
+    <p>The Berd Vay’e Team<br>
+    Eternalizing the Art of Timekeeping</p>
+
   </body>
 </html>
