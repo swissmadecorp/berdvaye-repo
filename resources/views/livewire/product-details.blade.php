@@ -83,9 +83,9 @@
         <div class="productThumb animateRun pt-2" data-vp-add-class="visible" data-vp-repeat="false" data-vp-offset="12%">
             <div class="container-fluid clearfix">
                 <ul>
-                <li><img src="/images/product/{{$imgPath}}/thumb/thumb_01.jpg" alt="thumb_01"></li>
-                <li><img src="/images/product/{{$imgPath}}/thumb/thumb_02.jpg" alt="thumb_02"></li>
-                <li><img src="/images/product/{{$imgPath}}/thumb/thumb_03.jpg" alt="thumb_03"></li>
+                <li class="flex justify-center"><img src="/images/product/{{$imgPath}}/thumb/thumb_01.jpg" alt="thumb_01"></li>
+                <li class="flex justify-center"><img src="/images/product/{{$imgPath}}/thumb/thumb_02.jpg" alt="thumb_02"></li>
+                <li class="flex justify-center"><img src="/images/product/{{$imgPath}}/thumb/thumb_03.jpg" alt="thumb_03"></li>
                 </ul>
             </div>
         </div>
