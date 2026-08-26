@@ -392,7 +392,7 @@ class CartComponent extends Component
         $account_status = '';
 
         if (empty($customer['payment_source'])) {
-            $payment = "PayPal";
+            $payment = "paypal";
             $account_status = $customer['account_status'];
         } else $payment = $customer['payment_source'];
 

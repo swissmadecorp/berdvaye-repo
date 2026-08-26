@@ -212,7 +212,7 @@ class OrderItem extends Component
             $this->customer['s_state'] = $this->selectedSState;
             // if (!$customer) {
 
-            dd($this->items);
+            dd($this->customer);
             $data = array(
                 'cgroup' => $this->customerGroupId,
                 'firstname' => isset($this->customer['b_firstname']) ? $this->customer['b_firstname'] : "",
@@ -596,7 +596,10 @@ class OrderItem extends Component
                 $item['id'] = $product->id;
                 $item['p_model'] = $product_model->p_model;
                 $item['product_name'] = $product_model->model_name;
-                $item['price'] = $product_model->p_retail;
+                if ($this->customer["payment_options"] == "paypal" || $this->customer["payment_options"] == "card")
+                    $item['price'] = $product_model->p_retail;
+                else $item['price'] = $product_model->p_retail / 2;
+
                 $item['cost'] = $product_model->p_retail;
                 $item['serial'] = $product->p_serial;
                 $item['image'] = $image;
