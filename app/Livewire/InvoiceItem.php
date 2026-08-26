@@ -379,6 +379,12 @@ class InvoiceItem extends Component
             $this->customer['b_state'] = $this->selectedBState;
             $this->customer['s_state'] = $this->selectedSState;
 
+            dd($this->customer);
+            if ($this->customer['payment_options'] == 'Credit Card') {
+                $this->customer['payment_options'] = 'card';
+            } elseif ($this->customer['payment_options'] == 'PayPal') {
+                $this->customer['payment_options'] = 'paypal';
+            }
             $data = array(
                 'cgroup' => $this->customerGroupId,
                 'firstname' => isset($this->customer['b_firstname']) ? $this->customer['b_firstname'] : "",
