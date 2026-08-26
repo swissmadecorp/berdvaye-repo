@@ -380,24 +380,6 @@ class InvoiceItem extends Component
             $this->customer['b_state'] = $this->selectedBState;
             $this->customer['s_state'] = $this->selectedSState;
 
-            if ($this->customer['payment_options'] == 'card' || $this->customer['payment_options'] == 'paypal') {
-                if ($this->customer['tracking'] != '' && $this->customer['emailed_tracking'] != 1) {
-                    $this->customer['emailed_tracking'] = 1;
-                    $data = array(
-                        'to' => 'edba1970@yahoo.com',
-                        'customerName' => $this->customer['b_firstname'] . ' ' . $this->customer['b_lastname'],
-                        'tracking' => $this->customer['tracking'],
-                        'template' => 'emails.emailtracking',
-                        'subject' => 'Regarding your order!',
-                    );
-
-                    $gmail = new GMailer($data);
-                    $gmail->send();
-
-                }
-            }
-
-            dd($this->customer);
             $data = array(
                 'cgroup' => $this->customerGroupId,
                 'firstname' => isset($this->customer['b_firstname']) ? $this->customer['b_firstname'] : "",
@@ -412,11 +394,29 @@ class InvoiceItem extends Component
                 'zip' => isset($this->customer['b_zip']) ? $this->customer['b_zip'] : ""
             );
 
-
             $customer = Customer::updateOrCreate(['company'=>$this->customer['b_company']],$data);
 
             if ($this->invoiceId && !$this->memoTransfer) {
-                $this->customer['status']= $this->invoice->status;
+                if ($this->customer['payment_options'] == 'card' || $this->customer['payment_options'] == 'paypal') {
+                    if ($this->customer['tracking'] != '' && $this->customer['emailed_tracking'] != 1) {
+                        $this->customer['emailed_tracking'] = 1;
+
+                        $data = array(
+                            'to' => 'edba1970@yahoo.com',
+                            'customerName' => $this->customer['b_firstname'] . ' ' . $this->customer['b_lastname'],
+                            'tracking' => $this->customer['tracking'],
+                            'template' => 'emails.emailtracking',
+                            'subject' => 'Regarding your order!',
+                        );
+
+                        $gmail = new GMailer($data);
+                        $gmail->send();
+
+                    }
+                } else {
+                    $this->customer['status']= $this->invoice->status;
+                }
+
                 if ($customer->id != $this->customerId) {
                     $this->invoice->customers()->detach();
                     $this->invoice->customers()->attach($customer->id);
@@ -424,6 +424,7 @@ class InvoiceItem extends Component
                 $this->invoice->update($this->customer);
                 $order = $this->invoice;
             } else {
+
                 $this->customer['status'] = 0;
                 $this->customer['payment_options'] = 'Due upon receipt';
 
