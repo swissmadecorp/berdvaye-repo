@@ -699,7 +699,7 @@
                 serviceUrl: "{{route('find.product')}}",
                 showNoSuggestionNotice : true,
                 width: 250,
-                minChars: 2,
+                minChars: 1,
                 zIndex: 900,
                 onSelect: function (suggestion) {
                     $wire.$call('setProductRow', suggestion)
