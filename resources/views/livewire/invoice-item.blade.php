@@ -699,7 +699,7 @@
                 serviceUrl: "{{route('find.product')}}",
                 showNoSuggestionNotice : true,
                 width: 250,
-                minChars: 2,
+                minChars: 1,
                 zIndex: 900,
                 onSelect: function (suggestion) {
                     $wire.$call('setProductRow', suggestion)
@@ -736,15 +736,20 @@
 
             $(document).on("click", "#img_loader ul li", function () {
                 img_selection.attr('src', $(this).find('img').attr('src'));
+                img_selection.parent().find('input').eq(2).val(img_selection.attr('src'));
 
                 const menu = $("#img_loader");
                 const productId = menu.data("product-id");
-                $wire.$call('updateItemImage', productId, img_selection.attr('src'));
+                const row = menu.data("row");
+
+                debugger
+                $wire.$call('updateItemImage', productId,img_selection.attr('src'));
             });
 
             $(document).on('click', '.imgItem', function(e) {
                 e.stopPropagation(); // Prevent closing when clicking the button
 
+                debugger
                 let menu = $("#img_loader");
                 let button = $(this);
                 let container = $('#slideover-invoice');

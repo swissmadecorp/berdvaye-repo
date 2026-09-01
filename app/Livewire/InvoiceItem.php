@@ -1104,6 +1104,7 @@ class InvoiceItem extends Component
         $files = array();
         foreach (scandir($directory) as $file) {
             if ($file !== '.' && $file !== '..') {
+                dd($file);
                 $files[] = "<li class='cursor-pointer ellipsis flex items-center p-1 border-b h-25'><img class='w-16' src='/images/gallery/thumbnail/$file' /><span class='p-1'>$file</span></li>";
             }
         }
