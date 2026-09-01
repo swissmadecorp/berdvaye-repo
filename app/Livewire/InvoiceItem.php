@@ -334,7 +334,7 @@ class InvoiceItem extends Component
             }
             return $item;
         });
-        dd($ithis->items);
+
     }
 
     public function saveInvoice() {
@@ -443,6 +443,7 @@ class InvoiceItem extends Component
 
             $this->removeOriginallyZeroQuantityItemsFromMemo();
 
+            dd($this->items);
             foreach ($this->items as $index => $item) {
                 $product_id = $item['id'];
                 $img_name = null;
