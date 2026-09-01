@@ -6,11 +6,14 @@
 @endpush
 
     <!-- Do what you can, with what you have, where you are. - Theodore Roosevelt -->
-    <div x-data wire:ignore.self id="slideover-invoice-container" class="fixed inset-0 w-full h-full invisible z-50">
+    <div x-data="{ activeInvoiceTab: 'customer-info' }" wire:ignore.self id="slideover-invoice-container" class="fixed inset-0 w-full h-full invisible z-50">
         <div wire:ignore.self id="slideover-invoice-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
-        <div wire:ignore.self id="slideover-invoice" class="absolute duration-500 ease-out transition-all h-full bg-white right-0 top-0 translate-x-full overflow-y-scroll md:w-full w-[390px] dark:bg-gray-900" >
+        <div wire:ignore.self id="slideover-invoice" class="absolute duration-500 ease-out transition-all h-full bg-white right-0 top-0 translate-x-full overflow-y-scroll md:w-full w-[390px] dark:bg-gray-900 {{ $memoTransfer ? 'ring-4 ring-inset ring-amber-400' : '' }}" >
             <div class="bg-gray-200 p-3 dark:bg-gray-600 dark:text-gray-300 text-2xl text-gray-500">
-                @if ($invoiceId)
+                @if ($memoTransfer)
+                    <span>Create Invoice from Memo #{{$invoiceId}}</span>
+                    <span class="ml-2 inline-flex align-middle rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900 dark:text-amber-200">Transfer Mode</span>
+                @elseif ($invoiceId)
                     Edit Invoice #{{$invoiceId}}
                 @else
                     New Item
@@ -22,16 +25,23 @@
                 </svg>
             </div>
             <div wire:ignore.self class="border-b border-gray-200 dark:border-gray-700 dark:bg-black">
-                <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-500 border-purple-600 dark:border-purple-500" data-tabs-inactive-classes="dark:border-transparent text-gray-500 hover:text-gray-600 dark:text-gray-400 border-gray-100 hover:border-gray-300 dark:border-gray-700 dark:hover:text-gray-300" role="tablist">
+                <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="default-styled-tab" role="tablist">
                     <li class="me-2" role="presentation">
-                        <button wire:ignore.self class="inline-block p-4 border-b-2 rounded-t-lg" id="customer-info-tab" data-tabs-target="#customer-info" type="button" role="tab" aria-selected="true" aria-controls="profile">Customer Info</button>
+                        <button wire:ignore.self x-on:click="activeInvoiceTab = 'customer-info'" :class="activeInvoiceTab === 'customer-info' ? 'text-purple-600 border-purple-600 dark:text-purple-500 dark:border-purple-500' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg" id="customer-info-tab" type="button" role="tab" :aria-selected="activeInvoiceTab === 'customer-info'" aria-controls="customer-info">Customer Info</button>
                     </li>
 
                     <li x-data="{ invoiceid: @entangle('invoiceId'), invoicename: @entangle('invoiceName')}" x-cloak class="me-2" :class="{'hidden': invoiceid === 0 || invoicename === 'On Memo'}" role="presentation">
-                        <button wire:ignore.self class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300" id="payments-tab" data-tabs-target="#payments" type="button" role="tab" aria-selected="false" aria-controls="profile" >Payments</button>
+                        <button wire:ignore.self x-on:click="activeInvoiceTab = 'payments'" :class="activeInvoiceTab === 'payments' ? 'text-purple-600 border-purple-600 dark:text-purple-500 dark:border-purple-500' : 'text-gray-500 border-transparent'" class="inline-block p-4 border-b-2 rounded-t-lg" id="payments-tab" type="button" role="tab" :aria-selected="activeInvoiceTab === 'payments'" aria-controls="payments">Payments</button>
                     </li>
                 </ul>
             </div>
+
+            @if ($memoTransfer)
+                <div class="m-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100" role="status">
+                    <div class="font-semibold">You are creating a new invoice from Memo #{{$invoiceId}}.</div>
+                    <div class="mt-1 text-sm">All items shown below will be transferred to the new invoice. Select <strong>Leave on Memo</strong> for any item you do not want to invoice.</div>
+                </div>
+            @endif
 
             <div id="default-styled-tab-content">
             <div wire:loading.delay.long class="fixed z-50">
@@ -46,7 +56,7 @@
                 </div>
             </div>
 
-                <div wire:ignore.self x-data="{flex: 1}" class="p-4 rounded-lg dark:bg-gray-800" id="customer-info" role="tabpanel" aria-labelledby="customer-info-tab">
+                <div wire:ignore.self x-data="{flex: 1}" x-show="activeInvoiceTab === 'customer-info'" class="p-4 rounded-lg dark:bg-gray-800" id="customer-info" role="tabpanel" aria-labelledby="customer-info-tab">
                     <form>
                         <div class="grid md:gap-16 mb-6 md:grid-cols-3 p-3 pb-5 bg-gray-100 rounded-lg dark:bg-gray-600">
                             <x-input-standard model="customer.created_at" label="created_at" text="Order Date" validation/>
@@ -161,7 +171,7 @@
                                                 {{ $item['serial'] }}
                                             @endif
                                         </td>
-                                        <td class="px-4 py-4"><a href="#" wire:click.prevent="removeSingleItemById({{ $index }})" class="dark:hover:text-gray-300 font-medium inline-flex items-center justify-center rounded-lg text-base">Remove</a></td>
+                                        <td class="px-4 py-4"><a href="#" wire:click.prevent="removeSingleItemById({{ $index }})" class="dark:hover:text-gray-300 font-medium inline-flex items-center justify-center rounded-lg text-base">{{ $memoTransfer ? 'Leave on Memo' : 'Remove' }}</a></td>
                                     </tr>
                                     <tr>
                                     <td colspan="10">
@@ -187,7 +197,7 @@
                             </table>
 
                             <div class="pt-4">
-                                @if ($returnAmount)
+                                @if ($returnAmount && !$memoTransfer)
                                 <div class="grid gap-2 mb-2 md:grid-cols-3">
                                     <div></div>
                                     <div></div>
@@ -350,6 +360,9 @@
                             @endif
                             <button wire:click="saveInvoice()" type="button" class="text-white mt-4 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">{{$buttonText}}</button>
                             @endrole
+                            @if ($memoTransfer)
+                            <button wire:click="cancelMemoTransfer()" x-on:click="activeInvoiceTab = 'customer-info'; scrollInvoiceToTop()" type="button" class="mt-4 ml-2 rounded-lg border border-gray-400 bg-white px-5 py-2.5 text-center text-sm font-medium text-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-200 dark:focus:ring-gray-600">Cancel Transfer</button>
+                            @endif
                             @if (isset($customer['method']) && $customer['method'] == "On Memo")
                             <button wire:click="TransferToInvoice()" x-on:click="scrollInvoiceToTop()" type="button" class="text-white mt-4 bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800">Make Invoice</button>
                             @endif
@@ -364,7 +377,7 @@
                         @endif
                     </form>
                 </div>
-                <div wire:ignore.self class="hidden rounded-lg dark:bg-gray-800" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+                <div wire:ignore.self x-cloak x-show="activeInvoiceTab === 'payments'" class="rounded-lg dark:bg-gray-800" id="payments" role="tabpanel" aria-labelledby="payments-tab">
                     @if ($invoice)
                     <table x-ref="table" class="w-full text-sm text-left rtl:text-right dark:text-gray-400">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -686,7 +699,7 @@
                 serviceUrl: "{{route('find.product')}}",
                 showNoSuggestionNotice : true,
                 width: 250,
-                minChars: 2,
+                minChars: 1,
                 zIndex: 900,
                 onSelect: function (suggestion) {
                     $wire.$call('setProductRow', suggestion)

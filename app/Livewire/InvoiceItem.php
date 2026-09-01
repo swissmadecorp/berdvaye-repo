@@ -135,7 +135,9 @@ class InvoiceItem extends Component
                 //     $image=$p_image[0]['location'];
                 // } else $image = '../no-image.jpg';
 
-                if ($product->retail->image_location)
+                if (!empty($product->pivot->img_name))
+                    $image = "/images/gallery/thumbnail/" . basename($product->pivot->img_name);
+                elseif ($product->retail->image_location)
                     $image = "/images/gallery/thumbnail/" . strtolower($product->retail->p_model) ."_thumb.jpg";
                 else {
                     if ($product->image())
@@ -327,14 +329,13 @@ class InvoiceItem extends Component
         $this->loadInvoice($memoId);
     }
 
-    public function updateItemImage($id,$newImage) {
+    public function updateItemImage($id, $newImage) {
         $this->items = $this->items->map(function ($item) use ($id, $newImage) {
-            if (isset($item['id']) && $item['id'] === $id) {
+            if (isset($item['id']) && (int) $item['id'] === (int) $id) {
                 $item['image'] = $newImage;
             }
             return $item;
         });
-
     }
 
     public function saveInvoice() {
@@ -443,7 +444,6 @@ class InvoiceItem extends Component
 
             $this->removeOriginallyZeroQuantityItemsFromMemo();
 
-            dd($this->items);
             foreach ($this->items as $index => $item) {
                 $product_id = $item['id'];
                 $img_name = null;
