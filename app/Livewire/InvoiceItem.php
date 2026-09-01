@@ -334,6 +334,7 @@ class InvoiceItem extends Component
             }
             return $item;
         });
+        dd($ithis->items);
     }
 
     public function saveInvoice() {
