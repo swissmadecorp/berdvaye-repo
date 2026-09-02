@@ -232,12 +232,16 @@ class Invoices extends Component
 
     public function loadInvoice($id) {
         $this->dispatch('load-invoice',$id);
+
+        $this->skipRender();
     }
 
     public function getOrder($id = null) {
         //$order = Order::find($id);
         //$this->order = $order;
         $this->dispatch('current-order',$id);
+
+        $this->skipRender();
     }
 
     #[On('display-message')]
