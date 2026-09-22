@@ -14,12 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/plugins/thumbnail/lg-thumbnail.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/plugins/fullscreen/lg-fullscreen.umd.min.js"></script>
 @stop
-    <div x-data class="bg-gray-200 dark:bg-gray-900 flex h-[3rem] items-center p-2 rounded-lg">
-        <div class="w-full inline-flex rounded-lg shadow">
-            <h1 class="uppercase tracking-wide text-3xl text-gray-500 dark:text-white">{{$pageName}}</h1>
-        </div>
 
-    </div>
     <!-- Page Header -->
     @if (session()->has('message'))
         <div id="alert-border-1" class="flex items-center p-4 mb-4 text-blue-800 border-t-4 border-blue-300 bg-blue-50 dark:text-blue-400 dark:bg-gray-800 dark:border-blue-800 transition-all duration-500 animate-bounce" role="alert">
@@ -70,7 +65,7 @@
                 <input wire:model.live="search" type="text" id="table-search" class="focus:ring-0 bg-gray-50 border-0 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white h-10 p-0 rounded-lg text-gray-900 w-full" placeholder="Search for items">
             </div>
         </div>
-            
+
         <!-- wire:poll.15s.visible -->
         <table class="w-full text-sm text-left rtl:text-right dark:text-gray-400">
             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -83,7 +78,7 @@
                 </tr>
             </head>
             <tbody>
-            
+
             @foreach($orders as $order)
             <tr wire:key="{{$order->customer_id}}" class="odd:bg-white hover:bg-gray-100 odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
                 <td class="px-3 py-3"><a wire:ignore.self data-id="{{$order->customer_id}}" class="viewpayment cursor-pointer hover:text-blue-500 px-4 py-2 text-sm text-gray-700 dark:text-sky-600 dark:hover:text-white">{{$order->company}}</a></td>
@@ -96,7 +91,7 @@
             </tbody>
         </table>
     </div>
-    
+
     <!-- Payment Slider for an individual payment -->
     <div wire:ignore.self id="slideover-payment-container" class="fixed inset-0 w-full h-full invisible z-[51]" >
         <div wire:ignore.self id="slideover-payment-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
@@ -115,7 +110,7 @@
     <div class="px-6 py-3">{{ $orders->links('livewire.pagination') }}</div>
 
 @script
-    <script> 
+    <script>
         $(function() {
 
             function Slider() {

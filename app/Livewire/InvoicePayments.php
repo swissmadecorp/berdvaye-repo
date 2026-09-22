@@ -2,158 +2,172 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use App\Models\Payment;
-use App\Models\Order;
 use App\Models\Customer;
+use App\Services\InvoicePaymentLedger;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
+use Livewire\Component;
 use Livewire\WithPagination;
-use App\SearchCriteriaTrait;
 
 class InvoicePayments extends Component
 {
-    use WithPagination, SearchCriteriaTrait;
+    use WithPagination;
 
-    public $page = 1;
-    public $search = '';
+    public string $search = '';
+    public string $statusFilter = 'all';
+    #[Locked]
+    public ?int $customerId = null;
+    public bool $drawerOpen = false;
+    public string $paymentSearch = '';
+    public string $invoiceFilter = '';
+    public string $dateFrom = '';
+    public string $dateTo = '';
 
-    protected $queryString = [
-        'page',
-    ];
-
-    public function updatingSearch()
+    public function updated($property): void
     {
+        if (in_array($property, ['search', 'statusFilter'])) {
+            $this->resetPage();
+        }
+        if (in_array($property, ['paymentSearch', 'invoiceFilter', 'dateFrom', 'dateTo'])) {
+            $this->resetPage('paymentsPage');
+            $this->resetValidation();
+            $this->validateDates();
+        }
+    }
+
+    public function clearCustomerFilters(): void
+    {
+        $this->reset('search', 'statusFilter');
         $this->resetPage();
     }
 
-    public function getPayment($id) {
-        $countries = new \App\Libs\Countries;
-        $customer = Customer::find($id);
-        ob_start();
-        ?>
-        <div class="bg-gray-100 mb-2 p-2 pb-2 rounded-lg shadow-lg dark:bg-gray-800 dark:text-gray-300" style="clear: both">
-        <?php
-            $address2 = '';
-
-            $state_b = $countries->getStateCodeFromCountry($customer->state);
-            $country = $countries->getCountry($customer->country);
-
-            echo $customer->company.'<br>';
-            echo !empty($customer->address1) ? $customer->address1 .'<br>' : '';
-            echo !empty($customer->address2) ? $customer->address2 .'<br>' : '';
-            echo !empty($customer->city) ? $customer->city .', '. $state_b . ' ' . $customer->zip.'<br>': '';
-
-            echo !empty($customer->phone) ? $customer->phone . '<br>' : '';
-            echo !empty($customer->po) ? 'PO #: '.$customer->po . '<br>' : '';
-                //die($customer->company);
-        ?>
-        </div>
-        <table id="payments" class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-500" cellspacing="0" width="100%">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-500">
-                <tr>
-                    <th scope="col" class="px-3 py-3">Id</th>
-                    <th scope="col" class="text-right px-3 py-3">Amount</th>
-                    <th scope="col" class="text-right px-3 py-3">Reference</th>
-                    <th scope="col" class="text-right px-3 py-3">Payment</th>
-                    <th scope="col" class="text-right px-3 py-3">Date</th>
-
-                </tr>
-            </thead>
-            <tbody class="dark:text-gray-400">
-                <?php
-                    $orders = $customer->orders()->sortit()->get();
-                    $order_id = 1;
-                ?>
-                <?php foreach ($orders as $order) { ?>
-                    <?php
-                        $calc = $order->total;
-                        $totalLeft = $order->payments->sum('amount');
-                        $id = $order->id;
-                        foreach ($order->payments as $payment) { ?>
-                            <tr class="<?= $order->payments->count() > 1 ? 'bg-gray-50' : '' ?> border-b dark:bg-gray-800 dark:border-gray-700">
-                                <td class="px-3 py-3">
-                                    <a href="#" @click="$dispatch('load-invoice', { id: <?= $id ?> })" data-id="<?= $id ?>" class="editinvoice cursor-pointer dark:hover:text-white text-sky-600"><?= $id ?></a>
-                                </td>
-                                <td class="text-right px-3 py-3">$<?= number_format($calc,2) ?></td>
-                                <td class="text-right px-3 py-3"><?= $payment->ref ?></td>
-                                <td class="text-right px-3 py-3">$<?= number_format($payment->amount,2) ?></td>
-                                <td class="text-right px-3 py-3"><?= $payment->created_at->format('m/d/Y') ?></td>
-                            </tr>
-                            <?php $calc -= $payment->amount; ?>
-                        <?php } ?>
-
-                        <?php if ($totalLeft) { ?>
-                            <?php
-                                if ($order->total-$totalLeft == 0)
-                                    $totalLeft = 0;
-                                else $totalLeft = $order->total - $totalLeft;
-                            ?>
-                            <tr>
-                                <td class="px-3 py-3"><span class="font-bold">Total Owed</span></td>
-                                <td class="text-right w-32 px-3 py-3" colspan="4"><span class="font-bold">$<?= number_format($totalLeft,2) ?></span></td>
-                            </tr>
-                        <?php } ?>
-
-                <?php } ?>
-            </tbody>
-        </table>
-        <?php
-
-        $content=ob_get_clean();
-        $this->dispatch('viewPayment',$content);
-        return $content;
+    public function getPayment(int $id): void
+    {
+        Customer::findOrFail($id);
+        $this->customerId = $id;
+        $this->clearPaymentFilters();
+        $this->resetPage('invoicesPage');
+        $this->drawerOpen = true;
+        $this->dispatch('customer-payments-opened');
     }
 
-    public function render(){
+    public function clearPaymentFilters(): void
+    {
+        $this->reset('paymentSearch', 'invoiceFilter', 'dateFrom', 'dateTo');
+        $this->resetValidation();
+        $this->resetPage('paymentsPage');
+    }
 
-        $columns = ['company'];
-        $searchTerm = $this->generateSearchQuery($this->search, $columns);
+    public function openInvoice(int $id, bool $recordPayment = false): void
+    {
+        abort_unless($this->customerId && DB::table('customer_order')->where('customer_id', $this->customerId)->where('order_id', $id)->exists(), 404);
+        $this->dispatch('open-payment-invoice', id: $id, tab: $recordPayment ? 'payments' : 'customer-info')->to(InvoiceItem::class);
+    }
 
-        // $orders = Customer::when(strlen($searchTerm)>0, function($query) use ($searchTerm) {
-        //     $query->whereRaw($searchTerm);
-        // })
-        // ->select(\DB::Raw('customer_id, company, amount, max_date'))
-        // ->join(\DB::Raw('(select customer_id, sum(amount) amount, max(order_payment.created_at) max_date
-        //         FROM customer_order JOIN order_payment ON customer_order.order_id = order_payment.order_id
-        //         GROUP BY customer_id) name_date'),'customers.id','=','name_date.customer_id')
-        // ->groupBy('customer_id','company')
-        // ->orderByRaw('max_date desc')
-        // ->paginate(perPage: 10);
+    #[On('display-message')]
+    public function refreshPayments(): void
+    {
+        // Re-render balances after the existing invoice editor saves or deletes a payment.
+    }
 
-        $orders = Customer::when(strlen($searchTerm)>0, function($query) use ($searchTerm) {
-            $query->whereRaw($searchTerm);
-        })
-        ->joinSub(
-            \DB::table('customer_order')
-                ->join('order_payment', 'customer_order.order_id', '=', 'order_payment.order_id')
-                ->select(
-                    'customer_order.customer_id',
-                    \DB::raw('SUM(order_payment.amount) as amount'),
-                    \DB::raw('MAX(order_payment.created_at) as max_date')
-                )
-                ->groupBy('customer_order.customer_id'),
-            'name_date',
-            'customers.id',
-            '=',
-            'name_date.customer_id'
-        )
-        ->join('customer_order', 'customers.id', '=', 'customer_order.customer_id')
-        ->join('order_product', 'customer_order.order_id', '=', 'order_product.order_id')
-        ->join('orders', 'customer_order.order_id', '=', 'orders.id')
-        // ->where('orders.status', '=', 1)
-        // ->where('method','Invoice')
-        ->select(
-            'name_date.customer_id',
-            'customers.company',
-            'name_date.amount',
-            'name_date.max_date',
-            \DB::raw('SUM(order_product.price * order_product.qty) as total_cost')
-        )
-        ->groupBy('name_date.customer_id', 'customers.company')
-        ->orderBy('name_date.max_date', 'desc')
-        ->paginate(perPage: 10);
+    protected function customerQuery()
+    {
+        return app(InvoicePaymentLedger::class)->customers()
+            ->when(trim($this->search) !== '', function ($query) {
+                $term = '%'.trim($this->search).'%';
+                $query->where(function ($query) use ($term) {
+                    $query->where('customers.company', 'like', $term)
+                        ->orWhereIn('customers.id', DB::table('customer_order')
+                            ->leftJoin('order_payment', 'order_payment.order_id', '=', 'customer_order.order_id')
+                            ->select('customer_order.customer_id')
+                            ->where(function ($query) use ($term) {
+                                $query->where('customer_order.order_id', trim(ltrim($this->search, '#')))
+                                    ->orWhere('order_payment.ref', 'like', $term);
+                            }));
+                });
+            })
+            ->when($this->statusFilter === 'outstanding', fn ($query) => $query->where('outstanding', '>', 0))
+            ->when($this->statusFilter === 'paid', fn ($query) => $query->where('outstanding', '=', 0));
+    }
 
-        return view('livewire.invoice-payments',['orders' => $orders,'pageName' => "Payments"])
-            ->layoutData(['pageName' => 'Payments'])
-            ->title("Payments");
+    protected function paymentQuery()
+    {
+        return app(InvoicePaymentLedger::class)->paymentsFor($this->customerId ?? 0)
+            ->when(trim($this->paymentSearch) !== '', function ($query) {
+                $query->where(function ($query) {
+                    $query->where('ref', 'like', '%'.trim($this->paymentSearch).'%')
+                        ->orWhere('order_id', trim(ltrim($this->paymentSearch, '#')));
+                });
+            })
+            ->when($this->invoiceFilter !== '', fn ($query) => $query->where('order_id', $this->invoiceFilter))
+            ->when($this->validDate($this->dateFrom), fn ($query) => $query->where('created_at', '>=', $this->dateFrom.' 00:00:00'))
+            ->when($this->validDate($this->dateTo), fn ($query) => $query->where('created_at', '<', \Carbon\Carbon::parse($this->dateTo)->addDay()->format('Y-m-d')));
+    }
+
+    protected function validDate(string $value): bool
+    {
+        return $value !== '' && validator(['date' => $value], ['date' => 'date_format:Y-m-d'])->passes();
+    }
+
+    protected function validateDates(): void
+    {
+        $this->validate([
+            'dateFrom' => 'nullable|date_format:Y-m-d',
+            'dateTo' => 'nullable|date_format:Y-m-d'.($this->dateFrom !== '' ? '|after_or_equal:dateFrom' : ''),
+        ], ['dateTo.after_or_equal' => 'The end date must be on or after the start date.']);
+    }
+
+    public function exportPayments()
+    {
+        abort_unless($this->customerId, 404);
+        $this->validateDates();
+        $query = $this->paymentQuery()->orderByDesc('created_at')->orderByDesc('id');
+
+        return response()->streamDownload(function () use ($query) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Payment date', 'Invoice', 'Reference', 'Amount received'], ',', '"', '');
+            foreach ($query->cursor() as $payment) {
+                $reference = (string) $payment->ref;
+                if (preg_match('/^[\s]*[=+@\-\t\r\n]/', $reference)) {
+                    $reference = "'".$reference;
+                }
+                fputcsv($file, [$payment->created_at, $payment->order_id, $reference, number_format((float) $payment->amount, 2, '.', '')], ',', '"', '');
+            }
+            fclose($file);
+        }, 'customer-'.$this->customerId.'-payments.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function render()
+    {
+        $query = $this->customerQuery();
+        $summary = DB::query()->fromSub(clone $query, 'filtered')
+            ->selectRaw('COUNT(*) as companies, COALESCE(SUM(invoiced), 0) as invoiced, COALESCE(SUM(received), 0) as received, COALESCE(SUM(outstanding), 0) as outstanding')->first();
+        // Payment activity determines the customer order, independently of invoice status/date.
+        $customers = $query->orderByRaw('last_payment IS NULL')->orderByDesc('last_payment')
+            ->orderBy('customers.id')->paginate(12);
+
+        $customer = null;
+        $customerTotals = null;
+        $payments = null;
+        $invoices = null;
+        $invoiceOptions = collect();
+        $outstandingInvoices = collect();
+        $filteredReceived = 0;
+        if ($this->customerId && $this->drawerOpen) {
+            $ledger = app(InvoicePaymentLedger::class);
+            $customer = Customer::find($this->customerId);
+            $customerTotals = $ledger->customers()->where('customers.id', $this->customerId)->first();
+            $invoiceQuery = DB::query()->fromSub($ledger->invoices(), 'ledger')->where('customer_id', $this->customerId);
+            $invoices = (clone $invoiceQuery)->orderByDesc('id')->paginate(12, ['*'], 'invoicesPage');
+            $invoiceOptions = (clone $invoiceQuery)->orderByDesc('id')->get(['id', 'method']);
+            $outstandingInvoices = (clone $invoiceQuery)->where('outstanding', '>', 0)->orderByDesc('outstanding')->get();
+            $filteredReceived = (clone $this->paymentQuery())->sum('amount');
+            $payments = $this->paymentQuery()->orderByDesc('created_at')->orderByDesc('id')->paginate(15, ['*'], 'paymentsPage');
+        }
+
+        return view('livewire.invoice-payments', compact('customers', 'summary', 'customer', 'customerTotals', 'payments', 'invoices', 'invoiceOptions', 'outstandingInvoices', 'filteredReceived'))
+            ->layoutData(['pageName' => 'Invoice payments'])->title('Invoice payments');
     }
 }
+
