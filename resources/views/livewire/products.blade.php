@@ -104,7 +104,6 @@ if ($event.key === '=') {
                             <option <?php echo !empty($product->p_status) && $product->p_status==$key ? 'selected' : '' ?> value="{{ $key }}">{{ $status }}</option>
                             @endif
                         @endforeach
-                        <option <?php echo !empty('Selected') ? 'selected' : '' ?> value="50">Selected</option>
                     </select>
                 </div>
         </div>
