@@ -57,7 +57,7 @@
             <table class="ip-table">
                 <thead><tr>
                     @foreach (['company' => 'Customer', 'invoiced' => 'Total invoiced', 'received' => 'Received', 'profit' => 'Profit', 'outstanding' => 'Outstanding', 'last_payment' => 'Last payment'] as $column => $label)
-                        <th scope="col" class="{{ in_array($column, ['invoiced', 'received', 'profit', 'outstanding']) ? 'ip-money' : '' }}" @if($column === 'last_payment') aria-sort="descending" @endif @if($column === 'profit') title="Payments received minus recorded item totals, using the original Payments page calculation." @endif>
+                        <th scope="col" class="{{ in_array($column, ['invoiced', 'received', 'profit', 'outstanding']) ? 'ip-money' : '' }}" @if($column === 'last_payment') aria-sort="descending" @endif @if($column === 'profit') title="Receipts minus item selling totals for active invoices only. Excludes memos, transferred and returned invoices. Actual product costs are not recorded, so this is not accounting profit." @endif>
                             {{ $label }} @if($column === 'last_payment')<span aria-hidden="true" class="ip-sort">↓</span>@endif
                         </th>
                     @endforeach
@@ -89,6 +89,7 @@
         @include('livewire.partials.payment-pagination', ['paginator' => $customers])
     </section>
     <p class="ip-footnote">Outstanding excludes memos, transferred and returned invoices. Overpayments on one invoice do not offset another invoice's balance.</p>
+    <p class="ip-footnote">Profit shows receipts minus item selling totals for active invoices only. It is not the amount owed or accounting profit; actual product costs are not recorded.</p>
     <div wire:loading.delay wire:target="getPayment" class="ip-toast" role="status">Opening customer payments…</div>
 
     <div wire:ignore.self id="slideover-payment-container" class="ip-overlay" x-cloak :class="{ 'is-open': open }" :aria-hidden="!open">

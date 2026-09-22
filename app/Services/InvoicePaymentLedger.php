@@ -35,18 +35,23 @@ class InvoicePaymentLedger
             ->selectRaw('customer_id, COUNT(*) as invoice_count, SUM(invoiced) as invoiced, SUM(received) as received, SUM(outstanding) as outstanding, SUM(overpaid) as overpaid, SUM(payment_count) as payment_count, MAX(last_payment) as last_payment')
             ->groupBy('customer_id');
 
-        // Preserve the original Payments page formula: receipts minus price * quantity.
-        // Aggregate separately from payments to avoid multiplying item costs by installments.
-        $links = DB::table('customer_order')->select('customer_id', 'order_id')->distinct();
-        $costs = DB::query()->fromSub($links, 'cost_links')
-            ->join('order_product', 'order_product.order_id', '=', 'cost_links.order_id')
-            ->selectRaw('cost_links.customer_id, SUM(order_product.price * order_product.qty) as total_cost')
-            ->groupBy('cost_links.customer_id');
+        // Compare receipts and item selling totals for the same active invoices.
+        // Aggregate items before joining: installments and duplicate customer links
+        // must not multiply them. Retail values are list prices, not actual costs.
+        $items = DB::table('order_product')
+            ->selectRaw('order_id, SUM(price * qty) as item_total')
+            ->groupBy('order_id');
+        $profit = DB::query()->fromSub($this->invoices(), 'profit_invoices')
+            ->leftJoinSub($items, 'invoice_items', 'invoice_items.order_id', '=', 'profit_invoices.id')
+            ->where('profit_invoices.method', 'Invoice')
+            ->where(fn ($query) => $query->whereIn('profit_invoices.status', [0, 1])->orWhereNull('profit_invoices.status'))
+            ->selectRaw('profit_invoices.customer_id, SUM(profit_invoices.received) as received, SUM(COALESCE(invoice_items.item_total, 0)) as item_total')
+            ->groupBy('profit_invoices.customer_id');
 
         return DB::table('customers')->joinSub($totals, 'totals', 'totals.customer_id', '=', 'customers.id')
-            ->leftJoinSub($costs, 'costs', 'costs.customer_id', '=', 'customers.id')
+            ->leftJoinSub($profit, 'invoice_profit', 'invoice_profit.customer_id', '=', 'customers.id')
             ->select('customers.id', 'customers.company', 'totals.*')
-            ->selectRaw('COALESCE(costs.total_cost, 0) as total_cost, ROUND(totals.received - COALESCE(costs.total_cost, 0), 2) as profit');
+            ->selectRaw('COALESCE(invoice_profit.item_total, 0) as invoice_item_total, ROUND(COALESCE(invoice_profit.received, 0) - COALESCE(invoice_profit.item_total, 0), 2) as profit');
     }
 
     public function paymentsFor(int $customerId): Builder
