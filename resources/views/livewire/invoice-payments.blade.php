@@ -61,7 +61,7 @@
                             {{ $label }} @if($column === 'last_payment')<span aria-hidden="true" class="ip-sort">↓</span>@endif
                         </th>
                     @endforeach
-                    <th scope="col">Status</th><th scope="col"><span class="ip-sr-only">View history</span></th>
+                    <th scope="col">Status</th>
                 </tr></thead>
                 <tbody>
                     @forelse ($customers as $row)
@@ -79,10 +79,9 @@
                                 @if ($row->outstanding > 0)<span class="ip-badge ip-badge-amber">{{ $row->received > 0 ? 'Partial' : 'Unpaid' }}</span>
                                 @else<span class="ip-badge ip-badge-green">Settled</span>@endif
                             </td>
-                            <td><button type="button" class="ip-link ip-nowrap" wire:click="getPayment({{ $row->id }})" wire:loading.attr="disabled" wire:target="getPayment" aria-label="View payments for {{ $row->company }}">View payments <span aria-hidden="true">→</span></button></td>
                         </tr>
                     @empty
-                        <tr><td colspan="8"><div class="ip-empty"><strong>No customers found</strong><p>Try another company name, invoice number or reference.</p>@if($search || $statusFilter !== 'all')<button class="ip-button" type="button" wire:click="clearCustomerFilters">Clear filters</button>@endif</div></td></tr>
+                        <tr><td colspan="7"><div class="ip-empty"><strong>No customers found</strong><p>Try another company name, invoice number or reference.</p>@if($search || $statusFilter !== 'all')<button class="ip-button" type="button" wire:click="clearCustomerFilters">Clear filters</button>@endif</div></td></tr>
                     @endforelse
                 </tbody>
             </table>

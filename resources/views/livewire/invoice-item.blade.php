@@ -561,6 +561,7 @@
 
                 // debugger
                 if ($('#slideover-invoice-container').hasClass('invisible')) {
+                    window.dispatchEvent(new CustomEvent('invoice-slider-closed'));
                     const productTabButton = document.getElementById('customer-info-tab');
                     if (productTabButton) {
                         productTabButton.click();
@@ -572,6 +573,16 @@
                     }, "400");
                 }
             }
+
+            $wire.on('payment-invoice-ready', event => {
+                if ($('#slideover-invoice-container').hasClass('invisible')) {
+                    Slider();
+                }
+                $('body').addClass('overflow-hidden');
+                const tabId = event.tab === 'payments' ? 'payments-tab' : 'customer-info-tab';
+                document.getElementById(tabId)?.click();
+                document.getElementById(tabId)?.focus();
+            });
 
             $('.creditAmount').marquee({
                 direction: 'left',
@@ -716,7 +727,7 @@
                 if (event.key === 'Escape') {
                     if (!$('#slideover-invoice-container').hasClass('invisible')) {
                         closeAndClearFields();
-                    } if (!$('#slideover-product-container').hasClass('invisible'))
+                    } if ($('#slideover-product-container').length && !$('#slideover-product-container').hasClass('invisible'))
                         closeFields();
                 }
             });

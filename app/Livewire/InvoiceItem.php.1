@@ -105,14 +105,6 @@ class InvoiceItem extends Component
         $this->selectedSState = 3956;
     }
 
-    #[On('open-payment-invoice')]
-    public function openPaymentInvoice(int $id, string $tab = 'customer-info'): void
-    {
-        $this->clearFields();
-        $this->loadInvoice($id);
-        $this->dispatch('payment-invoice-ready', tab: $tab === 'payments' ? 'payments' : 'customer-info');
-    }
-
     #[On('load-invoice')]
     public function loadInvoice($id) {
         $this->invoiceId = $id;
