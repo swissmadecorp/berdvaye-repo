@@ -1,152 +1,219 @@
-<div>
-@section('main_header')
-<!-- <link href="/css/dropzone.css" rel="stylesheet"> -->
-<link href="/editable-select/jquery-editable-select.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/css/lightgallery-bundle.min.css" integrity="sha512-nUqPe0+ak577sKSMThGcKJauRI7ENhKC2FQAOOmdyCYSrUh0GnwLsZNYqwilpMmplN+3nO3zso8CWUgu33BDag==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-@stop
-
-@section ('footer')
-<script src="/js/jquery.autocomplete.min.js"></script>
-<script src="/js/jquery.mask.js" type="text/javascript"></script>
-<script src="/editable-select/jquery-editable-select.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/lightgallery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/plugins/zoom/lg-zoom.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/plugins/thumbnail/lg-thumbnail.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/plugins/fullscreen/lg-fullscreen.umd.min.js"></script>
-@stop
-    <div x-data class="bg-gray-200 dark:bg-gray-900 flex h-[3rem] items-center p-2 rounded-lg">
-        <div class="w-full inline-flex rounded-lg shadow">
-            <h1 class="uppercase tracking-wide text-3xl text-gray-500 dark:text-white">{{$pageName}}</h1>
-        </div>
-
+<div class="ip-workspace"
+    x-data="{
+        open: false, tab: 'payments', invoiceOpen: false, chooseInvoice: false, returnFocus: null,
+        showDrawer() {
+            if (!this.open) this.returnFocus = document.activeElement;
+            this.tab = 'payments';
+            this.chooseInvoice = false;
+            this.$nextTick(() => {
+                this.$refs.drawerBody.scrollTop = 0;
+                this.open = true;
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) this.$nextTick(() => this.$refs.drawerClose.focus({ preventScroll: true }));
+            });
+        },
+        closeDrawer() {
+            this.open = false;
+            this.$nextTick(() => this.returnFocus?.focus({ preventScroll: true }));
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) this.$wire.set('drawerOpen', false);
+        },
+        finishDrawerTransition(event) {
+            if (event.propertyName !== 'transform') return;
+            if (this.open) this.$refs.drawerClose.focus({ preventScroll: true });
+            else this.$wire.set('drawerOpen', false);
+        }
+    }"
+    @customer-payments-opened.window="showDrawer()"
+    @payment-invoice-ready.window="invoiceOpen = true"
+    @invoice-slider-closed.window="invoiceOpen = false; if (open) $nextTick(() => $refs.drawerClose?.focus({ preventScroll: true }))"
+    @keydown.escape.window="if (open && !invoiceOpen) closeDrawer()">
+    @push('main_header')
+    <link rel="stylesheet" href="{{ asset('css/invoice-payments.css') }}?v={{ filemtime(public_path('css/invoice-payments.css')) }}">
+    @endpush
+    <livewire:invoice-item />
+    <header class="ip-heading">
+        <div><span class="ip-eyebrow">Payment workspace</span><h1>Invoice payments</h1><p>Every customer. Every payment. A clear view of what remains.</p></div>
+        <span class="ip-scope">All-time balances</span>
+    </header>
+    <div class="ip-metrics">
+        <div class="ip-metric"><span>Total invoiced</span><strong>&dollar;{{ number_format($summary->invoiced, 2) }}</strong><small>Invoice totals for matching customers</small></div>
+        <div class="ip-metric"><span>Payments received</span><strong>&dollar;{{ number_format($summary->received, 2) }}</strong><small>All recorded payments</small></div>
+        <div class="ip-metric ip-metric-accent"><span>Outstanding</span><strong>&dollar;{{ number_format($summary->outstanding, 2) }}</strong><small>Remaining on active invoices</small></div>
+        <div class="ip-metric"><span>Customers</span><strong>{{ number_format($summary->companies) }}</strong><small>Matching your filters</small></div>
     </div>
-    <!-- Page Header -->
-    @if (session()->has('message'))
-        <div id="alert-border-1" class="flex items-center p-4 mb-4 text-blue-800 border-t-4 border-blue-300 bg-blue-50 dark:text-blue-400 dark:bg-gray-800 dark:border-blue-800 transition-all duration-500 animate-bounce" role="alert">
-            <svg class="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-            </svg>
-            <div class="ms-3 text-sm font-medium">
-                @if (is_array(session('message')))
-                    {{ session('message')['msg'] }}
-                @else
-                    {{ session('message') }}
+    <section class="ip-card">
+        <div class="ip-toolbar">
+            <label class="ip-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+                <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search customer, invoice or payment reference" aria-label="Search customers, invoices or payment references">
+            </label>
+            <div class="ip-segments" aria-label="Customer balance filters">
+                <button type="button" wire:click="$set('statusFilter', 'all')" class="{{ $statusFilter === 'all' ? 'is-active' : '' }}" aria-pressed="{{ $statusFilter === 'all' ? 'true' : 'false' }}">All customers</button>
+                <button type="button" wire:click="$set('statusFilter', 'outstanding')" class="{{ $statusFilter === 'outstanding' ? 'is-active' : '' }}" aria-pressed="{{ $statusFilter === 'outstanding' ? 'true' : 'false' }}">Outstanding</button>
+                <button type="button" wire:click="$set('statusFilter', 'paid')" class="{{ $statusFilter === 'paid' ? 'is-active' : '' }}" aria-pressed="{{ $statusFilter === 'paid' ? 'true' : 'false' }}">Settled</button>
+            </div>
+        </div>
+        <div class="ip-list-caption"><span>{{ $customers->total() }} {{ \Illuminate\Support\Str::plural('customer', $customers->total()) }} · Latest payments first</span><span>Select a customer to view all payments <span aria-hidden="true">↗</span></span></div>
+        <div class="ip-table-scroll" wire:loading.class="ip-updating" wire:target="search,statusFilter">
+            <table class="ip-table">
+                <thead><tr>
+                    @foreach (['company' => 'Customer', 'invoiced' => 'Total invoiced', 'received' => 'Received', 'profit' => 'Profit', 'outstanding' => 'Outstanding', 'last_payment' => 'Last payment'] as $column => $label)
+                        <th scope="col" class="{{ in_array($column, ['invoiced', 'received', 'profit', 'outstanding']) ? 'ip-money' : '' }}" @if($column === 'last_payment') aria-sort="descending" @endif @if($column === 'profit') title="Payments received minus recorded item totals, using the original Payments page calculation." @endif>
+                            {{ $label }} @if($column === 'last_payment')<span aria-hidden="true" class="ip-sort">↓</span>@endif
+                        </th>
+                    @endforeach
+                    <th scope="col">Status</th><th scope="col"><span class="ip-sr-only">View history</span></th>
+                </tr></thead>
+                <tbody>
+                    @forelse ($customers as $row)
+                        <tr wire:key="customer-{{ $row->id }}" class="{{ $customerId === $row->id && $drawerOpen ? 'is-selected' : '' }}">
+                            <td><button type="button" class="ip-customer" wire:click="getPayment({{ $row->id }})" wire:loading.attr="disabled" wire:target="getPayment">
+                                <span class="ip-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($row->company ?: 'C', 0, 1)) }}</span>
+                                <span><strong>{{ $row->company ?: 'Customer #'.$row->id }}</strong><small>{{ $row->invoice_count }} {{ $row->invoice_count == 1 ? 'invoice / order' : 'invoices / orders' }} · {{ $row->payment_count }} {{ \Illuminate\Support\Str::plural('payment', $row->payment_count) }}</small></span>
+                            </button></td>
+                            <td class="ip-money">&dollar;{{ number_format($row->invoiced, 2) }}</td>
+                            <td class="ip-money">&dollar;{{ number_format($row->received, 2) }}</td>
+                            <td class="ip-money {{ $row->profit < 0 ? 'ip-profit-negative' : ($row->profit > 0 ? 'ip-profit-positive' : 'ip-muted') }}">{{ $row->profit < 0 ? '−' : '' }}&dollar;{{ number_format(abs($row->profit), 2) }}</td>
+                            <td class="ip-money {{ $row->outstanding > 0 ? 'ip-amount-due' : 'ip-muted' }}">&dollar;{{ number_format($row->outstanding, 2) }}</td>
+                            <td class="ip-nowrap">{{ $row->last_payment ? \Carbon\Carbon::parse($row->last_payment)->format('M d, Y') : 'No payments yet' }}</td>
+                            <td>
+                                @if ($row->outstanding > 0)<span class="ip-badge ip-badge-amber">{{ $row->received > 0 ? 'Partial' : 'Unpaid' }}</span>
+                                @else<span class="ip-badge ip-badge-green">Settled</span>@endif
+                            </td>
+                            <td><button type="button" class="ip-link ip-nowrap" wire:click="getPayment({{ $row->id }})" wire:loading.attr="disabled" wire:target="getPayment" aria-label="View payments for {{ $row->company }}">View payments <span aria-hidden="true">→</span></button></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8"><div class="ip-empty"><strong>No customers found</strong><p>Try another company name, invoice number or reference.</p>@if($search || $statusFilter !== 'all')<button class="ip-button" type="button" wire:click="clearCustomerFilters">Clear filters</button>@endif</div></td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @include('livewire.partials.payment-pagination', ['paginator' => $customers])
+    </section>
+    <p class="ip-footnote">Outstanding excludes memos, transferred and returned invoices. Overpayments on one invoice do not offset another invoice's balance.</p>
+    <div wire:loading.delay wire:target="getPayment" class="ip-toast" role="status">Opening customer payments…</div>
+
+    <div wire:ignore.self id="slideover-payment-container" class="ip-overlay" x-cloak :class="{ 'is-open': open }" :aria-hidden="!open">
+        <div class="ip-backdrop" @click="if (!invoiceOpen) closeDrawer()" aria-hidden="true"></div>
+        <section wire:ignore.self class="ip-drawer" role="dialog" aria-modal="true" aria-labelledby="ip-customer-title"
+            x-trap.inert.noscroll.noautofocus.noreturn="open && !invoiceOpen"
+            @transitionend.self="finishDrawerTransition($event)">
+            <header class="ip-drawer-header">
+                <div class="ip-drawer-title">
+                    <div><span class="ip-eyebrow">Payments / Customer history</span><h2 id="ip-customer-title">{{ $customer?->company ?: 'Customer payments' }}</h2><p>Every payment across all invoices.</p></div>
+                    <button type="button" x-ref="drawerClose" class="ip-icon-button" @click="closeDrawer()" aria-label="Close customer payments">✕</button>
+                </div>
+                @if ($customerTotals)
+                    <div class="ip-metrics ip-drawer-metrics">
+                        <div class="ip-metric"><span>Total invoiced</span><strong>&dollar;{{ number_format($customerTotals->invoiced, 2) }}</strong></div>
+                        <div class="ip-metric"><span>Total received</span><strong>&dollar;{{ number_format($customerTotals->received, 2) }}</strong></div>
+                        <div class="ip-metric ip-metric-accent"><span>Outstanding</span><strong>&dollar;{{ number_format($customerTotals->outstanding, 2) }}</strong></div>
+                    </div>
+                    @if ($customerTotals->overpaid > 0)<p class="ip-footnote">Overpaid invoices: &dollar;{{ number_format($customerTotals->overpaid, 2) }}. Shown separately from outstanding balances.</p>@endif
+                @endif
+                <div class="ip-tabs" role="tablist" aria-label="Customer payment views">
+                    <button id="ip-payments-tab" type="button" role="tab" :aria-selected="tab === 'payments'" :tabindex="tab === 'payments' ? 0 : -1" aria-controls="ip-payments-panel" :class="{ 'is-active': tab === 'payments' }" @click="tab = 'payments'" @keydown.arrow-right.prevent="tab = 'invoices'; $refs.invoicesTab.focus()">All payments ({{ $customerTotals->payment_count ?? 0 }})</button>
+                    <button id="ip-invoices-tab" x-ref="invoicesTab" type="button" role="tab" :aria-selected="tab === 'invoices'" :tabindex="tab === 'invoices' ? 0 : -1" aria-controls="ip-invoices-panel" :class="{ 'is-active': tab === 'invoices' }" @click="tab = 'invoices'" @keydown.arrow-left.prevent="tab = 'payments'; document.getElementById('ip-payments-tab').focus()">Invoices ({{ $customerTotals->invoice_count ?? 0 }})</button>
+                </div>
+            </header>
+            <div class="ip-drawer-body" x-ref="drawerBody">
+                @if ($customer && $payments)
+                    <div id="ip-payments-panel" role="tabpanel" aria-labelledby="ip-payments-tab" x-show="tab === 'payments'">
+                        <div class="ip-payment-filters">
+                            <label class="ip-field ip-filter-search"><span>Find a payment</span><input type="search" wire:model.live.debounce.300ms="paymentSearch" placeholder="Invoice or reference"></label>
+                            <label class="ip-field"><span>Invoice</span><select wire:model.live="invoiceFilter"><option value="">All invoices</option>@foreach($invoiceOptions as $invoice)<option value="{{ $invoice->id }}">#{{ $invoice->id }}{{ $invoice->method !== 'Invoice' ? ' · '.$invoice->method : '' }}</option>@endforeach</select></label>
+                            <label class="ip-field"><span>From</span><input type="date" wire:model.live="dateFrom" aria-label="Payments from date"></label>
+                            <label class="ip-field"><span>To</span><input type="date" wire:model.live="dateTo" aria-label="Payments to date"></label>
+                        </div>
+                        @error('dateFrom')<p class="ip-error" role="alert">{{ $message }}</p>@enderror
+                        @error('dateTo')<p class="ip-error" role="alert">{{ $message }}</p>@enderror
+                        <div class="ip-list-caption">
+                            <span>{{ $payments->total() }} {{ \Illuminate\Support\Str::plural('payment', $payments->total()) }} · {{ $paymentSearch || $invoiceFilter || $dateFrom || $dateTo ? 'Filtered results' : 'All time' }}</span>
+                            <div class="ip-inline-actions">
+                                @if ($paymentSearch || $invoiceFilter || $dateFrom || $dateTo)<button type="button" class="ip-link" wire:click="clearPaymentFilters">Reset filters</button>@endif
+                                <button type="button" class="ip-button ip-button-small" wire:click="exportPayments" wire:loading.attr="disabled" wire:target="exportPayments" @disabled($payments->total() === 0)>Export CSV</button>
+                            </div>
+                        </div>
+                        <div class="ip-table-scroll ip-ledger" wire:loading.class="ip-updating" wire:target="paymentSearch,invoiceFilter,dateFrom,dateTo">
+                            <table class="ip-table">
+                                <thead><tr><th scope="col">Payment date</th><th scope="col">Invoice</th><th scope="col">Reference</th><th scope="col" class="ip-money">Amount received</th></tr></thead>
+                                <tbody>
+                                    @forelse ($payments as $payment)
+                                        <tr wire:key="payment-{{ $payment->id }}">
+                                            <td class="ip-nowrap">{{ $payment->created_at ? \Carbon\Carbon::parse($payment->created_at)->format('M d, Y') : '—' }}</td>
+                                            <td><button type="button" class="ip-link ip-invoice-link" wire:click="openInvoice({{ $payment->order_id }})" wire:loading.attr="disabled" wire:target="openInvoice">#{{ $payment->order_id }}</button></td>
+                                            <td class="ip-reference">{{ $payment->ref ?: '—' }}</td>
+                                            <td class="ip-money">&dollar;{{ number_format($payment->amount, 2) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4"><div class="ip-empty"><strong>{{ $customerTotals?->payment_count ? 'No payments match these filters' : 'No payments recorded yet' }}</strong><p>{{ $customerTotals?->payment_count ? 'Adjust your search, invoice or date range.' : 'Open an outstanding invoice below to record its first payment.' }}</p></div></td></tr>
+                                    @endforelse
+                                </tbody>
+                                <tfoot><tr><th scope="row" colspan="3">Total received · {{ $paymentSearch || $invoiceFilter || $dateFrom || $dateTo ? 'All filtered results' : 'All dates' }}</th><td class="ip-money">&dollar;{{ number_format($filteredReceived, 2) }}</td></tr></tfoot>
+                            </table>
+                        </div>
+                        @include('livewire.partials.payment-pagination', ['paginator' => $payments])
+                        <p class="ip-footnote">Select an invoice number to open its details. Totals include every matching payment, across all pages.</p>
+                    </div>
+                    <div id="ip-invoices-panel" role="tabpanel" aria-labelledby="ip-invoices-tab" x-show="tab === 'invoices'">
+                        <div class="ip-list-caption"><span>All invoices and orders with payment history</span><span>All time</span></div>
+                        <div class="ip-table-scroll ip-ledger">
+                            <table class="ip-table">
+                                <thead><tr><th scope="col">Invoice</th><th scope="col" class="ip-money">Total</th><th scope="col" class="ip-money">Received</th><th scope="col" class="ip-money">Outstanding</th><th scope="col">Status</th><th scope="col"><span class="ip-sr-only">Action</span></th></tr></thead>
+                                <tbody>
+                                    @forelse($invoices as $invoice)
+                                        <tr wire:key="invoice-{{ $invoice->id }}">
+                                            <td><button type="button" class="ip-link ip-invoice-link" wire:click="openInvoice({{ $invoice->id }})" wire:loading.attr="disabled" wire:target="openInvoice">#{{ $invoice->id }}</button>@if($invoice->method !== 'Invoice')<small class="ip-cell-note">{{ $invoice->method }}</small>@endif</td>
+                                            <td class="ip-money">&dollar;{{ number_format($invoice->total, 2) }}</td>
+                                            <td class="ip-money">&dollar;{{ number_format($invoice->received, 2) }}</td>
+                                            <td class="ip-money">&dollar;{{ number_format($invoice->outstanding, 2) }}</td>
+                                            <td>
+                                                @if(in_array((int) $invoice->status, [2, 3]))<span class="ip-badge">{{ (int) $invoice->status === 2 ? 'Transferred' : 'Returned' }}</span>
+                                                @elseif($invoice->method !== 'Invoice')<span class="ip-badge">{{ $invoice->method }}</span>
+                                                @elseif($invoice->overpaid > 0)<span class="ip-badge ip-badge-green">Overpaid</span><small class="ip-cell-note">&dollar;{{ number_format($invoice->overpaid, 2) }}</small>
+                                                @elseif($invoice->outstanding > 0)<span class="ip-badge ip-badge-amber">{{ $invoice->received > 0 ? 'Partial' : 'Unpaid' }}</span>
+                                                @else<span class="ip-badge ip-badge-green">Paid</span>@endif
+                                            </td>
+                                            <td>@if($invoice->outstanding > 0)<button type="button" class="ip-link ip-nowrap" wire:click="openInvoice({{ $invoice->id }}, true)" wire:loading.attr="disabled" wire:target="openInvoice">Record payment</button>@endif</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="6"><div class="ip-empty">No invoices found.</div></td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        @include('livewire.partials.payment-pagination', ['paginator' => $invoices])
+                        <p class="ip-footnote">Outstanding excludes memos, transferred and returned invoices.</p>
+                    </div>
+                    @if($outstandingInvoices->isNotEmpty())
+                        <section class="ip-balances" x-show="tab === 'payments' || chooseInvoice" x-ref="balances">
+                            <div class="ip-balance-heading"><h3>Remaining balances</h3><span>{{ $outstandingInvoices->count() }} {{ \Illuminate\Support\Str::plural('invoice', $outstandingInvoices->count()) }}</span></div>
+                            <p x-show="chooseInvoice" class="ip-footnote" role="status">Choose the invoice you want to apply a payment to.</p>
+                            @foreach($outstandingInvoices as $invoice)
+                                <div class="ip-balance-row" wire:key="balance-{{ $invoice->id }}">
+                                    <div><button type="button" class="ip-link" wire:click="openInvoice({{ $invoice->id }})">Invoice #{{ $invoice->id }}</button><small>Total &dollar;{{ number_format($invoice->total, 2) }} · Received &dollar;{{ number_format($invoice->received, 2) }}</small></div>
+                                    <strong class="ip-money">&dollar;{{ number_format($invoice->outstanding, 2) }}</strong>
+                                    <button type="button" class="ip-button ip-button-small" wire:click="openInvoice({{ $invoice->id }}, true)" wire:loading.attr="disabled" wire:target="openInvoice">Record payment</button>
+                                </div>
+                            @endforeach
+                        </section>
+                    @else
+                        <div class="ip-settled" x-show="tab === 'payments'"><span aria-hidden="true">✓</span> No outstanding invoice balances.</div>
+                    @endif
+                @elseif($drawerOpen)
+                    <div class="ip-empty">This customer is no longer available.</div>
                 @endif
             </div>
-            <button type="button" @click="dismiss()" class="ms-auto -mx-1.5 -my-1.5 bg-blue-50 text-blue-500 rounded-lg focus:ring-2 focus:ring-blue-400 p-1.5 hover:bg-blue-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700" data-dismiss-target="#alert-border-1" aria-label="Close">
-            <span class="sr-only">Dismiss</span>
-            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-            </svg>
-            </button>
-        </div>
-    @elseif (session()->has('error'))
-        <div id="alert-border-1" class="flex items-center p-4 mb-4 text-red-800 border-t-4 border-red-300 bg-red-50 dark:text-red-400 dark:bg-gray-800 dark:border-red-800 transition-all duration-500 animate-bounce" role="alert">
-            <svg class="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-            </svg>
-            <div class="ms-3 text-sm font-medium">
-                {{ session('error') }}
-            </div>
-            <button type="button" @click="dismiss()" class="ms-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700"  data-dismiss-target="#alert-border-2" aria-label="Close">
-            <span class="sr-only">Dismiss</span>
-            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-            </svg>
-            </button>
-        </div>
-    @endif
-
-    <livewire:invoice-item />
-    <!-- Main Payment page -->
-    <div class="relative sm:rounded-lg" >
-        <div class="flex items-center justify-between flex-column md:flex-row flex-wrap space-y-4 md:space-y-0 py-4 bg-white dark:bg-gray-900">
-            <div class="bg-gray-50 block border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:border-blue-500 dark:focus:ring-blue-500 dark:placeholder-gray-400 dark:text-white focus:border-blue-500 focus:ring-blue-500 mt-1 ps-10 relative rounded-lg text-gray-900 w-2 w-96">
-                <div class="absolute inset-y-0 rtl:inset-r-0 start-0 flex items-center ps-3 pointer-events-none">
-                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-                    </svg>
-                </div>
-                <input wire:model.live="search" type="text" id="table-search" class="focus:ring-0 bg-gray-50 border-0 border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white h-10 p-0 rounded-lg text-gray-900 w-full" placeholder="Search for items">
-            </div>
-        </div>
-            
-        <!-- wire:poll.15s.visible -->
-        <table class="w-full text-sm text-left rtl:text-right dark:text-gray-400">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                    <th scope="col" class="px-3 py-3">Company</th>
-                    <th scope="col" class="text-right cursor-pointer px-3 py-3">Cost</th>
-                    <th scope="col" class="text-right cursor-pointer px-3 py-3">Amount Sold.</th>
-                    <th scope="col" class="text-right cursor-pointer px-3 py-3">Profit</th>
-                    <th scope="col" class="text-right cursor-pointer px-3 py-3">Date</th>
-                </tr>
-            </head>
-            <tbody>
-            
-            @foreach($orders as $order)
-            <tr wire:key="{{$order->customer_id}}" class="odd:bg-white hover:bg-gray-100 odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                <td class="px-3 py-3"><a wire:ignore.self data-id="{{$order->customer_id}}" class="viewpayment cursor-pointer hover:text-blue-500 px-4 py-2 text-sm text-gray-700 dark:text-sky-600 dark:hover:text-white">{{$order->company}}</a></td>
-                <td class="text-right px-3 py-3">{{'$'. number_format($order->total_cost,2)}}</td>
-                <td class="text-right px-3 py-3">{{'$'. number_format($order->amount,2)}}</td>
-                <td class="text-right px-3 py-3">{{'$'. number_format($order->amount-$order->total_cost,2)}}</td>
-                <td class="text-right px-3 py-3 w-24">{{date('m-d-Y',strtotime($order->max_date))}}</td>
-            </tr>
-            @endforeach
-            </tbody>
-        </table>
+            <footer class="ip-drawer-footer">
+                <button type="button" class="ip-button" @click="closeDrawer()">Close</button>
+                @if($outstandingInvoices->count() === 1)
+                    <button type="button" class="ip-button ip-button-primary" wire:click="openInvoice({{ $outstandingInvoices->first()->id }}, true)" wire:loading.attr="disabled" wire:target="openInvoice">Record payment <span aria-hidden="true">→</span></button>
+                @elseif($outstandingInvoices->count() > 1)
+                    <button type="button" class="ip-button ip-button-primary" @click="chooseInvoice = true; $nextTick(() => $refs.balances.scrollIntoView({ behavior: 'smooth', block: 'start' }))">Record payment <span aria-hidden="true">→</span></button>
+                @else
+                    <span class="ip-muted">All active invoice balances are settled</span>
+                @endif
+            </footer>
+        </section>
     </div>
-    
-    <!-- Payment Slider for an individual payment -->
-    <div wire:ignore.self id="slideover-payment-container" class="fixed inset-0 w-full h-full invisible z-[51]" >
-        <div wire:ignore.self id="slideover-payment-bg" class="absolute duration-500 ease-out transition-all inset-0 w-full h-full bg-gray-900 opacity-0"></div>
-        <div tabindex="0" wire:ignore.self id="slideover-payment" class="absolute duration-500 ease-out transition-all h-full bg-white right-0 top-0 translate-x-full overflow-y-scroll dark:bg-gray-600" style="width: 790px">
-            <div class="bg-gray-200 p-3 text-2xl text-gray-500 dark:bg-gray-700 dark:text-gray-200">Payments</div>
-            <div id="slideover-payment-child" class="w-10 h-10 flex items-center shadow-sm rounded-full justify-center hover:bg-gray-300 cursor-pointer absolute top-0 right-0 m-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-            </div>
-
-            <div wire:ignore class="p-3 dark:bg-gray-700" id="payment-content-conainer"></div>
-        </div>
-    </div>
-
-    <div class="px-6 py-3">{{ $orders->links('livewire.pagination') }}</div>
-
-@script
-    <script> 
-        $(function() {
-
-            function Slider() {
-                $('body').toggleClass('overflow-hidden')
-                $('#slideover-payment-container').toggleClass('invisible')
-                $('#slideover-payment-bg').toggleClass('opacity-0')
-                $('#slideover-payment-bg').toggleClass('opacity-20')
-                $('#slideover-payment').toggleClass('translate-x-full')
-                if (!$('#slideover-payment-container').hasClass('invisible')) {
-                    setTimeout(() => {
-                        $('#title').focus();
-                    }, "400");
-
-                }
-            }
-
-            $('#slideover-payment-child').click(function() {
-                Slider();
-            })
-
-            $(document).on('click', '.viewpayment', function() {
-                id = $(this).attr('data-id');
-                $wire.$call('getPayment', id);
-                Slider();
-            })
-
-            $wire.on('viewPayment', msg => {
-                debugger
-                $('#payment-content-conainer').html(msg[0])
-            })
-        })
-    </script>
-@endscript
 </div>
+
