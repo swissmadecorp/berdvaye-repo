@@ -167,6 +167,7 @@ class InvoicePayments extends Component
         }
 
         return view('livewire.invoice-payments', compact('customers', 'summary', 'customer', 'customerTotals', 'payments', 'invoices', 'invoiceOptions', 'outstandingInvoices', 'filteredReceived'))
+            ->with('pageName', 'Invoice payments')
             ->layoutData(['pageName' => 'Invoice payments'])->title('Invoice payments');
     }
 }
