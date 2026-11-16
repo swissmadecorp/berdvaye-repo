@@ -546,6 +546,7 @@
             var getPath = "{{route('ajax.get.customer')}}";
             var mainPath = "{{route('ajax.customer')}}";
             var img_selection;
+            const usCountryId = '231';
 
             window.scrollInvoiceToTop = function() {
                 $('#slideover-invoice').stop(true).animate({ scrollTop: 0 }, 900);
@@ -647,6 +648,117 @@
                 // debugger
                 $wire.$set('customer.'+$(this).attr('copyto'),$(this).val())
             })
+
+            function normalizePhoneCharacters(value) {
+                let normalized = (value || '').replace(/[^\d+\-\s().]/g, '');
+
+                if (normalized.indexOf('+') > 0) {
+                    normalized = normalized.replace(/\+/g, '');
+                }
+
+                if ((normalized.match(/\+/g) || []).length > 1) {
+                    normalized = '+' + normalized.replace(/\+/g, '');
+                }
+
+                return normalized;
+            }
+
+            function formatUsPhone(value) {
+                const digits = (value || '').replace(/\D/g, '');
+                const normalizedDigits = digits.length === 11 && digits.startsWith('1')
+                    ? digits.substring(1)
+                    : digits;
+
+                if (normalizedDigits.length !== 10) {
+                    return normalizePhoneCharacters(value).replace(/\s+/g, ' ').trim();
+                }
+
+                return `(${normalizedDigits.substring(0, 3)}) ${normalizedDigits.substring(3, 6)}-${normalizedDigits.substring(6)}`;
+            }
+
+            function getPhoneModelName(fieldId) {
+                return fieldId === 'b_phone' ? 'customer.b_phone' : 'customer.s_phone';
+            }
+
+            function getPhoneCountryId(fieldId) {
+                const selector = fieldId === 'b_phone' ? '#bcountry' : '#scountry';
+                const selectedCountry = $(selector).val();
+
+                if (selectedCountry !== undefined && selectedCountry !== null && selectedCountry !== '') {
+                    return String(selectedCountry);
+                }
+
+                return String(fieldId === 'b_phone' ? $wire.$get('selectedBCountry') : $wire.$get('selectedSCountry'));
+            }
+
+            function syncPhoneField($field, value) {
+                $field.val(value);
+                $wire.$set(getPhoneModelName($field.attr('id')), value);
+            }
+
+            function updatePhoneFieldUi() {
+                ['#b_phone', '#s_phone'].forEach(selector => {
+                    const $field = $(selector);
+
+                    if (!$field.length) {
+                        return;
+                    }
+
+                    if (typeof $field.unmask === 'function') {
+                        $field.unmask();
+                    }
+
+                    const isUsNumber = getPhoneCountryId($field.attr('id')) === usCountryId;
+
+                    $field.attr('placeholder', isUsNumber ? '(555) 555-5555' : '+44 20 7946 0958');
+                    $field.attr('inputmode', 'tel');
+                });
+            }
+
+            function formatPhoneField(field, shouldFormat) {
+                const $field = $(field);
+
+                if (!$field.length) {
+                    return;
+                }
+
+                const cleanedValue = normalizePhoneCharacters($field.val());
+                const isUsNumber = getPhoneCountryId($field.attr('id')) === usCountryId;
+                const nextValue = shouldFormat && isUsNumber
+                    ? formatUsPhone(cleanedValue)
+                    : cleanedValue;
+
+                if ($field.val() !== nextValue) {
+                    syncPhoneField($field, nextValue);
+                }
+            }
+
+            $(document)
+                .off('input.invoicePhoneFormatter blur.invoicePhoneFormatter', '#b_phone, #s_phone')
+                .on('input.invoicePhoneFormatter', '#b_phone, #s_phone', function() {
+                    formatPhoneField(this, false);
+                })
+                .on('blur.invoicePhoneFormatter', '#b_phone, #s_phone', function() {
+                    formatPhoneField(this, true);
+                });
+
+            $(document)
+                .off('change.invoicePhoneFormatter', '#bcountry, #scountry')
+                .on('change.invoicePhoneFormatter', '#bcountry, #scountry', function() {
+                    updatePhoneFieldUi();
+                    formatPhoneField('#b_phone', true);
+                    formatPhoneField('#s_phone', true);
+                });
+
+            $wire.on('setupPhoneMask', () => {
+                updatePhoneFieldUi();
+                formatPhoneField('#b_phone', true);
+                formatPhoneField('#s_phone', true);
+            })
+
+            updatePhoneFieldUi();
+            formatPhoneField('#b_phone', true);
+            formatPhoneField('#s_phone', true);
 
             $("#created_at").mask("99/99/9999",
                 {
