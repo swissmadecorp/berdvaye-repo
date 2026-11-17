@@ -288,7 +288,6 @@ class InvoiceItem extends Component
     }
 
     public function updatedCustomerIsCommercial($value) {
-        dd($value);
         $this->customer['is_commercial'] = $value;
     }
 
