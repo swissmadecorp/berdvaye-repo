@@ -289,7 +289,7 @@ class InvoiceItem extends Component
     }
 
     public function updatedCustomerIsCommercial($value) {
-        $this->customer['is_commercial'] = $value;
+        $this->customer['is_commercial'] = (bool) $value;
 
         $isCommercial = (bool) $value;
 
@@ -384,7 +384,7 @@ class InvoiceItem extends Component
         } else {
             $this->resetValidation();
 
-            if ($customer['is_commercial'] ?? true) {
+            if ($this->customer['is_commercial'] ?? false) {
                 foreach ($this->items as $index => $item) {
                     if (!isset($item['commercial_price']) || $item['commercial_price'] === null) {
                         $this->dispatch('itemMsg', "One or more items don't have a commercial price set.");
@@ -519,13 +519,17 @@ class InvoiceItem extends Component
 
                             $product_array = [
                                 'qty' => $qty,
-                                'price' => $price,
-                                'commercial_price' => $commercial_price,
                                 'img_name' => $img_name,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
                                 'retail' => $retail
                             ];
+
+                            if ($this->customer['is_commercial'] ?? false) {
+                                $product_array['commercial_price'] = $commercial_price;
+                            } else {
+                                $product_array['price'] = $price;
+                            }
 
                             $order->products()->attach($product->id, $product_array);
 
