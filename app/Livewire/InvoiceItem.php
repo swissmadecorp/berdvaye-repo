@@ -60,6 +60,7 @@ class InvoiceItem extends Component
         's_zip' => '',
         'b_email' => '',
         'method' => '',
+        'is_commercial' => 0,
     ];
     public $bstates = [];
     public $sstates = [];
@@ -284,6 +285,11 @@ class InvoiceItem extends Component
     #[On('hide-slider')]
     public function hideslider($hide=1) {
         $this->hideSlider = $hide;
+    }
+
+    public function updatingIsCommercial($value) {
+        dd($value);
+        $this->customer['is_commercial'] = $value;
     }
 
     public function deletePayment($id) {

@@ -90,6 +90,11 @@
                             <x-select-standard text="Payment Options" label="payment_options" model="customer.payment_options" :iterators="PaymentsOptions()" validation />
                         </div>
 
+                        <div class="flex gap-3 items-center pb-2">
+                            <input type="checkbox" wire:model.live="customer.is_commercial" id="is_commercial" />
+                            <label for="is_commercial" class="block text-sm font-medium text-gray-900 dark:text-white">Is Commercial</label>
+                        </div>
+
                         <div id="img_loader" class="absolute bg-gray-50 border border-gray-color border-solid h-50 overflow-y-auto p-1.5 shadow-lg hidden z-10">
                             <ul class="w-100 bg-white list-group">
                                 @foreach ($this->productImages as $images)
