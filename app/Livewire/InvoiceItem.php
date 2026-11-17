@@ -530,7 +530,6 @@ class InvoiceItem extends Component
                                 $product_array['price'] = $price;
                             }
 
-                            dd($item);
                             $order->products()->attach($product->id, $product_array);
 
                             $newOrderProductId = (int) \DB::table('order_product')
@@ -576,13 +575,17 @@ class InvoiceItem extends Component
                             ->where('id', $op_id)
                             ->update([
                                 'qty' => $qty,
-                                'price' => $price,
                                 'retail' => $retail == 0 ? $product->retailvalue() : $retail,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
                                 'img_name' => $img_name,
-                                'commercial_price' => $commercial_price
                         ]);
+
+                        if ($this->customer['is_commercial'] ?? false) {
+                            $product_array['commercial_price'] = $commercial_price;
+                        } else {
+                            $product_array['price'] = $price;
+                        }
 
                         $method = $this->customer['method'];
                         $isQuantityReturn = $this->isQuantityReturn($item, $method);
