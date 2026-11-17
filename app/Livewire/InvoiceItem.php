@@ -384,11 +384,21 @@ class InvoiceItem extends Component
         } else {
             $this->resetValidation();
 
-            foreach ($this->items as $index => $item) {
-                if ($item['id'] && !$item['price']) {
-                    $this->dispatch('itemMsg', "One or more items don't have a price set.");
-                    $this->addError("items.{$index}.price",'Price cannot be empty');
-                    return;
+            if ($customer['is_commercial'] ?? true) {
+                foreach ($this->items as $index => $item) {
+                    if (!isset($item['commercial_price']) || $item['commercial_price'] === null) {
+                        $this->dispatch('itemMsg', "One or more items don't have a commercial price set.");
+                        $this->addError("items.{$index}.commercial_price",'Commercial price cannot be empty');
+                        return;
+                    }
+                }
+            } else {
+                foreach ($this->items as $index => $item) {
+                    if ($item['id'] && !$item['price']) {
+                        $this->dispatch('itemMsg', "One or more items don't have a price set.");
+                        $this->addError("items.{$index}.price",'Price cannot be empty');
+                        return;
+                    }
                 }
             }
 
@@ -480,11 +490,13 @@ class InvoiceItem extends Component
                 $product_id = $item['id'];
                 $img_name = null;
 
+                dd($item);
                 if ($item['id']) { // if $item has an id then we have a product in the array
                     $qty = $item['qty'];
                     $price = $item['price'];
                     $product_name = $item['product_name'];
                     $retail = $item['cost'];
+                    $commercial_price = $item['commercial_price'] ?? 0;
 
                     if (!$product_name)
                         $product_name = "Miscellaneous";
@@ -508,6 +520,7 @@ class InvoiceItem extends Component
                             $product_array = [
                                 'qty' => $qty,
                                 'price' => $price,
+                                'commercial_price' => $commercial_price,
                                 'img_name' => $img_name,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
@@ -563,7 +576,8 @@ class InvoiceItem extends Component
                                 'retail' => $retail == 0 ? $product->retailvalue() : $retail,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
-                                'img_name' => $img_name
+                                'img_name' => $img_name,
+                                'commercial_price' => $commercial_price
                         ]);
 
                         $method = $this->customer['method'];
