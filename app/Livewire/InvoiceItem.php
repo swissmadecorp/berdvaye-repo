@@ -164,6 +164,7 @@ class InvoiceItem extends Component
                 $item = ['op_id'=>$product->pivot->id,'id'=>$product->pivot->product_id,'image'=>$image,
                     'product_name'=> !$product->pivot->product_name ? $product->p_model : $product->pivot->product_name,
                     'qty'=>$product->pivot->qty,'original_qty'=>$product->pivot->qty,'price'=>$product->pivot->price,
+                    'commercial_price'=>$product->pivot->commercial_price,
                     'msg'=>'','cost'=>$cost,'isReturned' =>  $isReturned,
                     'serial'=>$product->pivot->serial];
 
@@ -289,6 +290,24 @@ class InvoiceItem extends Component
 
     public function updatedCustomerIsCommercial($value) {
         $this->customer['is_commercial'] = $value;
+
+        $isCommercial = (bool) $value;
+
+        $this->items = collect($this->items)->map(function ($item) use ($isCommercial) {
+            // Safety fallback: if regular_price wasn't stored yet, grab current price before changing it
+            if (!isset($item['regular_price'])) {
+                $item['regular_price'] = $item['price'];
+            }
+
+            $item['is_commercial'] = $isCommercial;
+            $item['price'] = $isCommercial
+                ? ($item['commercial_price'] ?? 0)
+                : $item['regular_price'];
+
+            return $item;
+        });
+
+        $this->calculateTotalPrice();
     }
 
     public function deletePayment($id) {
@@ -464,6 +483,7 @@ class InvoiceItem extends Component
                 if ($item['id']) { // if $item has an id then we have a product in the array
                     $qty = $item['qty'];
                     $price = $item['price'];
+                    $commercial_price = $item['commercial_price'] ?? 0;
                     $product_name = $item['product_name'];
                     $retail = $item['cost'];
 
@@ -489,6 +509,7 @@ class InvoiceItem extends Component
                             $product_array = [
                                 'qty' => $qty,
                                 'price' => $price,
+                                'commercial_price' => $commercial_price,
                                 'img_name' => $img_name,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
@@ -541,6 +562,7 @@ class InvoiceItem extends Component
                             ->update([
                                 'qty' => $qty,
                                 'price' => $price,
+                                'commercial_price' => $commercial_price,
                                 'retail' => $retail == 0 ? $product->retailvalue() : $retail,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
