@@ -486,6 +486,15 @@ Invoiced
                         }
                     }
                     ?>
+
+                    <?php
+                        if ($order->is_commercial) {
+                            $price = $product->pivot->commercial_price;
+                        } else {
+                            $price = $product->pivot->price;
+                        }
+                    ?>
+
                     <tr nobr="true">
                         <?php if ($output != 'commercial') { ?>
                             <?php if ($orderStatus!='Repair') { ?>
@@ -511,8 +520,8 @@ Invoiced
                                 <td style="<?=$borderRight . $borderLeft . $borderBottom?>;text-align:center" width="45"><?= $foundProduct ? '-' : '' ?><?=$product->pivot->qty ?></td>
                                 <?php if ($output != 'packing_slip') { ?>
                                 <td style="<?=$borderLeft . $borderBottom?>; text-align: right"><?= $product->pivot->retail ? number_format($product->pivot->retail,2) : number_format($product->retailvalue(),2)?></td>
-                                <td style="<?=$borderLeft . $borderBottom?>; text-align: right"><?= $foundProduct ? '-' : '' ?><?= number_format($product->pivot->price,2)?></td>
-                                <td style="<?=$borderRight . $borderLeft. $borderBottom?>; text-align: right;background-color:#eee"><?= number_format($product->pivot->qty*$product->pivot->price,2)?></td>
+                                <td style="<?=$borderLeft . $borderBottom?>; text-align: right"><?= $foundProduct ? '-' : '' ?><?= number_format($price,2)?></td>
+                                <td style="<?=$borderRight . $borderLeft. $borderBottom?>; text-align: right;background-color:#eee"><?= number_format($product->pivot->qty*$price,2)?></td>
                                 <?php } ?>
                             <?php } else { ?>
                                 <td width="80" style="<?=$borderLeft . $borderBottom?>;color:#fff;text-align:center">
@@ -536,7 +545,7 @@ Invoiced
                             <?php } ?>
                             <td style="<?=$borderLeft . $borderBottom?>;line-height: 30px;" width="90"><?= $product->p_model ?></td>
                             <td style="<?=$borderLeft . $borderBottom?>;line-height: 30px;" width="50"><?= $product->pivot->qty ?></td>
-                            <td style="<?=$borderRight . $borderLeft . $borderBottom?>;line-height: 30px; text-align: right;background-color:#eee"><?= number_format($product->pivot->price,2)?></td>
+                            <td style="<?=$borderRight . $borderLeft . $borderBottom?>;line-height: 30px; text-align: right;background-color:#eee"><?= number_format($price,2)?></td>
                         <?php } ?>
                     </tr>
                     <?php } ?>
