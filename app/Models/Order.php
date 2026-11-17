@@ -10,13 +10,17 @@ class Order extends Model
 
     protected $guarded = ['id','product_name','product','qty','price','serial','created_at','product_id','customer_id','model','order_id','creditamount'];
 
+    protected $casts = [
+        'is_commercial' => 'boolean',
+    ];
+
     public function customers() {
         return $this->belongsToMany(Customer::class)
             ->withPivot('customer_id')->orderBy('pivot_customer_id','asc');
     }
 
     public function products() {
-        return $this->belongsToMany(Product::class)->withPivot('id','qty','price','retail','serial','product_name','memo_id','model','tracking','shipped','repair_date','returned_date','img_name');
+        return $this->belongsToMany(Product::class)->withPivot('id','qty','price','commercial_price','retail','serial','product_name','memo_id','model','tracking','shipped','repair_date','returned_date','img_name');
     }
 
     public function payments() {

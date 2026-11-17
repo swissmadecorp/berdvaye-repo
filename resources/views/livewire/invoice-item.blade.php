@@ -91,7 +91,11 @@
                         </div>
 
                         <div class="flex gap-3 items-center pb-2">
-                            <input type="checkbox" wire:model.live="customer.is_commercial" id="is_commercial" />
+                            <input type="checkbox"
+                                wire:key="invoice-commercial-{{ $invoiceId }}-{{ (int) ($customer['is_commercial'] ?? false) }}"
+                                wire:model.live="customer.is_commercial"
+                                id="is_commercial"
+                                @checked($customer['is_commercial'] ?? false) />
                             <label for="is_commercial" class="block text-sm font-medium text-gray-900 dark:text-white">Is Commercial</label>
                         </div>
 
