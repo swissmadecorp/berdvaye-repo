@@ -60,7 +60,7 @@ class InvoiceItem extends Component
         's_zip' => '',
         'b_email' => '',
         'method' => '',
-        'is_commercial' => 0,
+        'is_commercial' => false,
     ];
     public $bstates = [];
     public $sstates = [];
@@ -126,6 +126,7 @@ class InvoiceItem extends Component
 
         if ($invoice) {
             $this->customer = $invoice->toArray();
+            $this->customer['is_commercial'] = (bool) $invoice->is_commercial;
 
             $this->selectedBCountry = $this->customer['b_country'];
             $this->selectedSCountry = $this->customer['s_country'];
@@ -664,13 +665,15 @@ class InvoiceItem extends Component
 
             $status = $this->invoiceStatusAfterSave($order, $paidAmount, (float) $total);
 
-            $order->update([
+            $order->fill([
                 'subtotal' => $this->totalPrice,
                 'total' => $total,
                 'taxable' => $tax,
                 'freight' => $freight,
                 'status' => $status
             ]);
+            $order->is_commercial = (bool) ($this->customer['is_commercial'] ?? false);
+            $order->save();
 
             // eBayEndItem::dispatch($product_ids);
 
