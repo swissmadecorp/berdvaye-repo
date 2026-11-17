@@ -490,7 +490,6 @@ class InvoiceItem extends Component
                 $product_id = $item['id'];
                 $img_name = null;
 
-                dd($item);
                 if ($item['id']) { // if $item has an id then we have a product in the array
                     $qty = $item['qty'];
                     $price = $item['price'];
@@ -531,6 +530,7 @@ class InvoiceItem extends Component
                                 $product_array['price'] = $price;
                             }
 
+                            dd($item);
                             $order->products()->attach($product->id, $product_array);
 
                             $newOrderProductId = (int) \DB::table('order_product')
