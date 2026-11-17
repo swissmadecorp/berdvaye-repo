@@ -160,14 +160,14 @@
                                                 @endif
                                             @else
                                                 <input wire:model.live="items.{{$index}}.price" data-id="{{ $item['id'] }}" data-name="price" id="price-{{ $index }}" type="text" style="width: 80px" placeholder="0.00" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" pattern="^\d*(\.\d{0,2})?$">
-                                            @endif
 
-                                            @if ($items[$index]['id'])
-                                            @error('items.' . $index . '.price')
-                                                <div class="text-red-400 font-medium ">
-                                                    {{ $message }}
-                                                </div>
-                                            @enderror
+                                                @if ($items[$index]['id'])
+                                                @error('items.' . $index . '.price')
+                                                    <div class="text-red-400 font-medium ">
+                                                        {{ $message }}
+                                                    </div>
+                                                @enderror
+                                                @endif
                                             @endif
                                         </td>
                                         <td class="px-4 py-4">

@@ -291,22 +291,6 @@ class InvoiceItem extends Component
     public function updatedCustomerIsCommercial($value) {
         $this->customer['is_commercial'] = (bool) $value;
 
-        $isCommercial = (bool) $value;
-
-        $this->items = collect($this->items)->map(function ($item) use ($isCommercial) {
-            // Safety fallback: if regular_price wasn't stored yet, grab current price before changing it
-            if (!isset($item['regular_price'])) {
-                $item['regular_price'] = $item['price'];
-            }
-
-            $item['is_commercial'] = $isCommercial;
-            $item['price'] = $isCommercial
-                ? ($item['commercial_price'] ?? '')
-                : $item['regular_price'];
-
-            return $item;
-        });
-
         $this->calculateTotalPrice();
     }
 
@@ -386,7 +370,7 @@ class InvoiceItem extends Component
 
             if ($this->customer['is_commercial'] ?? false) {
                 foreach ($this->items as $index => $item) {
-                    if (!isset($item['commercial_price']) || $item['commercial_price'] === null) {
+                    if (!isset($item['commercial_price']) || $item['commercial_price'] === '') {
                         $this->dispatch('itemMsg', "One or more items don't have a commercial price set.");
                         $this->addError("items.{$index}.commercial_price",'Commercial price cannot be empty');
                         return;
@@ -521,14 +505,10 @@ class InvoiceItem extends Component
                                 'img_name' => $img_name,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
-                                'retail' => $retail
+                                'retail' => $retail,
+                                'price' => $price,
+                                'commercial_price' => $commercial_price,
                             ];
-
-                            if ($this->customer['is_commercial'] ?? false) {
-                                $product_array['commercial_price'] = $commercial_price;
-                            } else {
-                                $product_array['price'] = $price;
-                            }
 
                             $order->products()->attach($product->id, $product_array);
 
@@ -575,17 +555,13 @@ class InvoiceItem extends Component
                             ->where('id', $op_id)
                             ->update([
                                 'qty' => $qty,
+                                'price' => $price,
+                                'commercial_price' => $commercial_price,
                                 'retail' => $retail == 0 ? $product->retailvalue() : $retail,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
                                 'img_name' => $img_name,
                         ]);
-
-                        if ($this->customer['is_commercial'] ?? false) {
-                            $product_array['commercial_price'] = $commercial_price;
-                        } else {
-                            $product_array['price'] = $price;
-                        }
 
                         $method = $this->customer['method'];
                         $isQuantityReturn = $this->isQuantityReturn($item, $method);
@@ -1228,7 +1204,8 @@ class InvoiceItem extends Component
                         $qty = 0;
                     else $qty = $item['qty'];
 
-                    $price = preg_replace('/[\$,]/', '', $item['price']);
+                    $priceField = ($this->customer['is_commercial'] ?? false) ? 'commercial_price' : 'price';
+                    $price = preg_replace('/[\$,]/', '', (string) ($item[$priceField] ?? 0));
 
                     if ($price)
                         $p = ($price*$qty);
@@ -1317,7 +1294,7 @@ class InvoiceItem extends Component
             $index = $matches[1];
             $property = $matches[2];
 
-            if ($property == 'price' || $property == 'qty') {
+            if ($property == 'price' || $property == 'commercial_price' || $property == 'qty') {
 
                 $this->calculateTotalPrice();
 
