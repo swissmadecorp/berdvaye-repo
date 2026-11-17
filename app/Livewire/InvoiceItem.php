@@ -165,7 +165,7 @@ class InvoiceItem extends Component
                 $item = ['op_id'=>$product->pivot->id,'id'=>$product->pivot->product_id,'image'=>$image,
                     'product_name'=> !$product->pivot->product_name ? $product->p_model : $product->pivot->product_name,
                     'qty'=>$product->pivot->qty,'original_qty'=>$product->pivot->qty,'price'=>$product->pivot->price,
-                    'commercial_price'=>$product->pivot->commercial_price,
+                    'commercial_price'=>(float) $product->pivot->commercial_price === 0.0 ? '' : $product->pivot->commercial_price,
                     'msg'=>'','cost'=>$cost,'isReturned' =>  $isReturned,
                     'serial'=>$product->pivot->serial];
 
@@ -480,7 +480,7 @@ class InvoiceItem extends Component
                     $price = $item['price'];
                     $product_name = $item['product_name'];
                     $retail = $item['cost'];
-                    $commercial_price = $item['commercial_price'] ?? 0;
+                    $commercial_price = ($item['commercial_price'] ?? '') === '' ? 0 : $item['commercial_price'];
 
                     if (!$product_name)
                         $product_name = "Miscellaneous";
@@ -1405,6 +1405,7 @@ class InvoiceItem extends Component
                         'id' => $this->newProductId,
                         'product_name' => $product->retail->model_name,
                         'price' => $product->retail->p_retail / 2,
+                        'commercial_price' => '',
                         'cost' => number_format($product->retail->p_retail,0,'',''),
                         'image' => $image,
                         'onhand' => $onhand,
