@@ -301,7 +301,7 @@ class InvoiceItem extends Component
 
             $item['is_commercial'] = $isCommercial;
             $item['price'] = $isCommercial
-                ? ($item['commercial_price'] ?? 0)
+                ? ($item['commercial_price'] ?? '')
                 : $item['regular_price'];
 
             return $item;
@@ -483,7 +483,6 @@ class InvoiceItem extends Component
                 if ($item['id']) { // if $item has an id then we have a product in the array
                     $qty = $item['qty'];
                     $price = $item['price'];
-                    $commercial_price = $item['commercial_price'] ?? 0;
                     $product_name = $item['product_name'];
                     $retail = $item['cost'];
 
@@ -509,7 +508,6 @@ class InvoiceItem extends Component
                             $product_array = [
                                 'qty' => $qty,
                                 'price' => $price,
-                                'commercial_price' => $commercial_price,
                                 'img_name' => $img_name,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
@@ -562,7 +560,6 @@ class InvoiceItem extends Component
                             ->update([
                                 'qty' => $qty,
                                 'price' => $price,
-                                'commercial_price' => $commercial_price,
                                 'retail' => $retail == 0 ? $product->retailvalue() : $retail,
                                 'serial' => $serial,
                                 'product_name' => $product_name,
