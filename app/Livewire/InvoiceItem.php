@@ -287,7 +287,7 @@ class InvoiceItem extends Component
         $this->hideSlider = $hide;
     }
 
-    public function updatingIsCommercial($value) {
+    public function updatedCustomerIsCommercial($value) {
         dd($value);
         $this->customer['is_commercial'] = $value;
     }

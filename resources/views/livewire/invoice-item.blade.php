@@ -118,7 +118,7 @@
                                         <th scope="col" class="px-4 py-3">Image</th>
                                         <th scope="col" class="px-4 py-3">Product Name</th>
                                         <th scope="col" class="px-4 py-3">Qty</th>
-                                        <th scope="col" class="px-4 py-3">Price</th>
+                                        <th scope="col" class="px-4 py-3">@if ($customer['is_commercial']) Commercial Price @else Price @endif</th>
                                         <th scope="col" class="px-4 py-3">Retail</th>
                                         <th scope="col" class="px-4 py-3">Serial</th>
                                         <th scope="col" class="px-4 py-3">Action</th>
